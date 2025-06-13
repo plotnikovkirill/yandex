@@ -1,0 +1,555 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		ED4A18E82DFC8CB50006A426 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ED4A18D22DFC8CB10006A426 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ED4A18D92DFC8CB10006A426;
+			remoteInfo = yandexSMR;
+		};
+		ED4A18F22DFC8CB50006A426 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ED4A18D22DFC8CB10006A426 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ED4A18D92DFC8CB10006A426;
+			remoteInfo = yandexSMR;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		ED4A18DA2DFC8CB10006A426 /* yandexSMR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = yandexSMR.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ED4A18E72DFC8CB50006A426 /* yandexSMRTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = yandexSMRTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		ED4A18F12DFC8CB50006A426 /* yandexSMRUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = yandexSMRUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		ED4A18DC2DFC8CB10006A426 /* yandexSMR */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = yandexSMR;
+			sourceTree = "<group>";
+		};
+		ED4A18EA2DFC8CB50006A426 /* yandexSMRTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = yandexSMRTests;
+			sourceTree = "<group>";
+		};
+		ED4A18F42DFC8CB50006A426 /* yandexSMRUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = yandexSMRUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		ED4A18D72DFC8CB10006A426 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED4A18E42DFC8CB50006A426 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED4A18EE2DFC8CB50006A426 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		ED4A18D12DFC8CB10006A426 = {
+			isa = PBXGroup;
+			children = (
+				ED4A18DC2DFC8CB10006A426 /* yandexSMR */,
+				ED4A18EA2DFC8CB50006A426 /* yandexSMRTests */,
+				ED4A18F42DFC8CB50006A426 /* yandexSMRUITests */,
+				ED4A18DB2DFC8CB10006A426 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		ED4A18DB2DFC8CB10006A426 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				ED4A18DA2DFC8CB10006A426 /* yandexSMR.app */,
+				ED4A18E72DFC8CB50006A426 /* yandexSMRTests.xctest */,
+				ED4A18F12DFC8CB50006A426 /* yandexSMRUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		ED4A18D92DFC8CB10006A426 /* yandexSMR */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ED4A18FB2DFC8CB50006A426 /* Build configuration list for PBXNativeTarget "yandexSMR" */;
+			buildPhases = (
+				ED4A18D62DFC8CB10006A426 /* Sources */,
+				ED4A18D72DFC8CB10006A426 /* Frameworks */,
+				ED4A18D82DFC8CB10006A426 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				ED4A18DC2DFC8CB10006A426 /* yandexSMR */,
+			);
+			name = yandexSMR;
+			packageProductDependencies = (
+			);
+			productName = yandexSMR;
+			productReference = ED4A18DA2DFC8CB10006A426 /* yandexSMR.app */;
+			productType = "com.apple.product-type.application";
+		};
+		ED4A18E62DFC8CB50006A426 /* yandexSMRTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ED4A18FE2DFC8CB50006A426 /* Build configuration list for PBXNativeTarget "yandexSMRTests" */;
+			buildPhases = (
+				ED4A18E32DFC8CB50006A426 /* Sources */,
+				ED4A18E42DFC8CB50006A426 /* Frameworks */,
+				ED4A18E52DFC8CB50006A426 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ED4A18E92DFC8CB50006A426 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				ED4A18EA2DFC8CB50006A426 /* yandexSMRTests */,
+			);
+			name = yandexSMRTests;
+			packageProductDependencies = (
+			);
+			productName = yandexSMRTests;
+			productReference = ED4A18E72DFC8CB50006A426 /* yandexSMRTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		ED4A18F02DFC8CB50006A426 /* yandexSMRUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ED4A19012DFC8CB50006A426 /* Build configuration list for PBXNativeTarget "yandexSMRUITests" */;
+			buildPhases = (
+				ED4A18ED2DFC8CB50006A426 /* Sources */,
+				ED4A18EE2DFC8CB50006A426 /* Frameworks */,
+				ED4A18EF2DFC8CB50006A426 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ED4A18F32DFC8CB50006A426 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				ED4A18F42DFC8CB50006A426 /* yandexSMRUITests */,
+			);
+			name = yandexSMRUITests;
+			packageProductDependencies = (
+			);
+			productName = yandexSMRUITests;
+			productReference = ED4A18F12DFC8CB50006A426 /* yandexSMRUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		ED4A18D22DFC8CB10006A426 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1630;
+				LastUpgradeCheck = 1630;
+				TargetAttributes = {
+					ED4A18D92DFC8CB10006A426 = {
+						CreatedOnToolsVersion = 16.3;
+					};
+					ED4A18E62DFC8CB50006A426 = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = ED4A18D92DFC8CB10006A426;
+					};
+					ED4A18F02DFC8CB50006A426 = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = ED4A18D92DFC8CB10006A426;
+					};
+				};
+			};
+			buildConfigurationList = ED4A18D52DFC8CB10006A426 /* Build configuration list for PBXProject "yandexSMR" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = ED4A18D12DFC8CB10006A426;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = ED4A18DB2DFC8CB10006A426 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				ED4A18D92DFC8CB10006A426 /* yandexSMR */,
+				ED4A18E62DFC8CB50006A426 /* yandexSMRTests */,
+				ED4A18F02DFC8CB50006A426 /* yandexSMRUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		ED4A18D82DFC8CB10006A426 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED4A18E52DFC8CB50006A426 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED4A18EF2DFC8CB50006A426 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		ED4A18D62DFC8CB10006A426 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED4A18E32DFC8CB50006A426 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED4A18ED2DFC8CB50006A426 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		ED4A18E92DFC8CB50006A426 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ED4A18D92DFC8CB10006A426 /* yandexSMR */;
+			targetProxy = ED4A18E82DFC8CB50006A426 /* PBXContainerItemProxy */;
+		};
+		ED4A18F32DFC8CB50006A426 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ED4A18D92DFC8CB10006A426 /* yandexSMR */;
+			targetProxy = ED4A18F22DFC8CB50006A426 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		ED4A18F92DFC8CB50006A426 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		ED4A18FA2DFC8CB50006A426 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		ED4A18FC2DFC8CB50006A426 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s.yandexSMR;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		ED4A18FD2DFC8CB50006A426 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s.yandexSMR;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		ED4A18FF2DFC8CB50006A426 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s.yandexSMRTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/yandexSMR.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/yandexSMR";
+			};
+			name = Debug;
+		};
+		ED4A19002DFC8CB50006A426 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s.yandexSMRTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/yandexSMR.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/yandexSMR";
+			};
+			name = Release;
+		};
+		ED4A19022DFC8CB50006A426 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s.yandexSMRUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = yandexSMR;
+			};
+			name = Debug;
+		};
+		ED4A19032DFC8CB50006A426 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = s.yandexSMRUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = yandexSMR;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		ED4A18D52DFC8CB10006A426 /* Build configuration list for PBXProject "yandexSMR" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED4A18F92DFC8CB50006A426 /* Debug */,
+				ED4A18FA2DFC8CB50006A426 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ED4A18FB2DFC8CB50006A426 /* Build configuration list for PBXNativeTarget "yandexSMR" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED4A18FC2DFC8CB50006A426 /* Debug */,
+				ED4A18FD2DFC8CB50006A426 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ED4A18FE2DFC8CB50006A426 /* Build configuration list for PBXNativeTarget "yandexSMRTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED4A18FF2DFC8CB50006A426 /* Debug */,
+				ED4A19002DFC8CB50006A426 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ED4A19012DFC8CB50006A426 /* Build configuration list for PBXNativeTarget "yandexSMRUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED4A19022DFC8CB50006A426 /* Debug */,
+				ED4A19032DFC8CB50006A426 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = ED4A18D22DFC8CB10006A426 /* Project object */;
+}
