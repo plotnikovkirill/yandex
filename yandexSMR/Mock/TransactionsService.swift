@@ -9,14 +9,14 @@ import Foundation
 
 final class TransactionsService {
     
-    private var nextId: Int = 3
+    private var nextId: Int = 5
     
     private var transactions: [Transaction] = [
         Transaction(
             id: 1,
             accountId: 1,
-            categoryId: 2,
-            amount: 299.99,
+            categoryId: 1,
+            amount: 2999.99,
             transactionDate: Date().addingTimeInterval(-3600),
             comment: "Dinner in cafe",
             createdAt: Date().addingTimeInterval(-3600),
@@ -31,6 +31,28 @@ final class TransactionsService {
             comment: "Salary",
             createdAt: Date().addingTimeInterval(-86400 * 2),
             updatedAt: Date().addingTimeInterval(-86400 * 2)
+        )
+        ,
+        Transaction(
+            id: 3,
+            accountId: 1,
+            categoryId: 2,
+            amount: 5000,
+            transactionDate: Date().addingTimeInterval(-3600),
+            comment: "asdadsda",
+            createdAt: Date().addingTimeInterval(-3600),
+            updatedAt: Date().addingTimeInterval(-3600)
+        )
+        ,
+        Transaction(
+            id: 4,
+            accountId: 1,
+            categoryId: 3,
+            amount: 5000,
+            transactionDate: Date().addingTimeInterval(-3600),
+            comment: "asdasdsadd",
+            createdAt: Date().addingTimeInterval(-3600),
+            updatedAt: Date().addingTimeInterval(-3600)
         )
     ]
     
