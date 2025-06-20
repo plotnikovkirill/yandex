@@ -47,8 +47,8 @@ final class TransactionsService {
         Transaction(
             id: 4,
             accountId: 1,
-            categoryId: 3,
-            amount: 5000,
+            categoryId: 4,
+            amount: 6000,
             transactionDate: Date().addingTimeInterval(-3600),
             comment: "asdasdsadd",
             createdAt: Date().addingTimeInterval(-3600),

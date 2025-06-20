@@ -23,7 +23,7 @@ struct HistoryView: View {
     
     var body: some View {
         ZStack {
-            Color("BackgroundColor").ignoresSafeArea()
+            Color("Background").ignoresSafeArea()
             
             VStack(alignment: .leading, spacing: 1) {
                 Text("Моя история")
@@ -38,16 +38,22 @@ struct HistoryView: View {
                             DatePicker("", selection: $startDate, displayedComponents: [.date])
                                 .labelsHidden()
                                 .accentColor(Color("AccentColor"))
+                                .background(Color("AccentColor"))
+                                .cornerRadius(10)
                                 .onChange(of: startDate) {
                                     if startDate > endDate { endDate = startDate }
                                     Task { await loadTransactions() }
                                 }
+                                
                         }
                         HStack {
                             Text("Конец")
                             Spacer()
                             DatePicker("", selection: $endDate, in: ...Date(), displayedComponents: [.date])
                                 .labelsHidden()
+                                .accentColor(Color("AccentColor"))
+                                .background(Color("AccentColor"))
+                                .cornerRadius(10)
                                 .onChange(of: endDate) {
                                     if endDate < startDate { startDate = endDate }
                                     Task { await loadTransactions() }
@@ -73,17 +79,17 @@ struct HistoryView: View {
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
             }
-            .background(Color("BackgroundColor"))
+            .background(Color("Background"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
                         Button { showSortOptions = true } label: {
                             Image(systemName: "arrow.up.arrow.down")
-                                .foregroundColor(Color("ClockColor"))
+                                .foregroundColor(.black)
                         }
                         Button(action: {}) {
                             Image(systemName: "doc")
-                                .foregroundColor(Color("ClockColor"))
+                                .foregroundColor(Color(.black))
                         }
                     }
                 }

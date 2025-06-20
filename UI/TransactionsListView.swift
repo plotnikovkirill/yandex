@@ -26,7 +26,7 @@ struct TransactionsListView: View {
 
     var body: some View {
         ZStack {
-            Color("BackgroundColor").ignoresSafeArea()
+            Color("Background").ignoresSafeArea()
 
             NavigationView {
                 VStack(alignment: .leading, spacing: 0) {
@@ -41,7 +41,7 @@ struct TransactionsListView: View {
                                 Text("Всего")
                                 Spacer()
                                 Text("\(totalAmount.formatted()) ₽")
-                                    .foregroundColor(Color("Background"))
+                                    .foregroundColor(.black)
                             }
                         }
                         .listRowBackground(Color.white)
@@ -78,9 +78,11 @@ struct TransactionsListView: View {
                         HStack {
                             Button(action: { showSortOptions = true }) {
                                 Image(systemName: "arrow.up.arrow.down")
+                                    .foregroundColor(.black)
                             }
                             NavigationLink(destination: HistoryView(direction: direction)) {
                                 Image(systemName: "clock")
+                                    .foregroundColor(.black)
                             }
                         }
                     }
@@ -98,7 +100,7 @@ struct TransactionsListView: View {
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
                             .padding()
-                            .background(Color("BackGround"))
+                            .background(Color("AccentColor"))
                             .clipShape(Circle())
                             .shadow(radius: 4)
                     }

@@ -50,7 +50,7 @@ struct TransactionRow: View {
                 Text("\(transaction.amount.formatted()) ₽")
 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(Color("ArrowColor"))
+                    .foregroundColor(.black)
                     .font(.system(size: 13, weight: .semibold))
             }
         }
