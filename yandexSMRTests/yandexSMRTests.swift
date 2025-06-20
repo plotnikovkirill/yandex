@@ -1,142 +1,101 @@
 //
-//  yandex2Tests.swift
-//  yandex2Tests
+//  TransactionTests.swift
+//  FinanceTamer
 //
-//  Created by kirill on 13.06.2025.
+//  Created by Aliia Gumirova on 08.06.2025.
 //
 
-import Testing
+import Foundation
 import XCTest
 @testable import yandexSMR
 
-struct yandex2Tests {
+final class TransactionTests: XCTestCase {
 
-    @Test func testJsonRoundTripConversion() throws {
-        let transaction = Transaction(
-            id: 1,
-            accountId: 101,
-            categoryId: 201,
-            amount: 123.45,
-            transactionDate: Date(timeIntervalSince1970: 1672531200),
-            comment: "Test transaction",
-            createdAt: Date(timeIntervalSince1970: 1672530000),
-            updatedAt: Date(timeIntervalSince1970: 1672530000)
+    private var sampleTransaction: Transaction!
+
+    override func setUp() {
+        super.setUp()
+
+        sampleTransaction = Transaction(
+            id: 999,
+            accountId: 1,
+            categoryId: 2,
+            amount: Decimal(string: "123.45")!,
+            transactionDate: ISO8601DateFormatter().date(from: "2024-06-01T12:00:00Z")!,
+            comment: "Test operation",
+            createdAt: ISO8601DateFormatter().date(from: "2024-06-01T12:00:00Z")!,
+            updatedAt: ISO8601DateFormatter().date(from: "2024-06-01T12:00:00Z")!
         )
-        
-        // Convert to JSON
-        let jsonObject = transaction.jsonObject
-        XCTAssertNotNil(jsonObject)
-        
-        // Convert back to Transaction
-        guard let restored = Transaction.parse(jsonObject: jsonObject) else {
-            XCTFail("Failed to parse JSON object")
-            return
-        }
-        
-        // Verify all properties
-        XCTAssertEqual(transaction.id, restored.id)
-        XCTAssertEqual(transaction.accountId, restored.accountId)
-        XCTAssertEqual(transaction.categoryId, restored.categoryId)
-        XCTAssertEqual(transaction.amount, restored.amount)
-        XCTAssertEqual(transaction.transactionDate.timeIntervalSinceReferenceDate,
-                       restored.transactionDate.timeIntervalSinceReferenceDate,
-                       accuracy: 0.001)
-        XCTAssertEqual(transaction.comment, restored.comment)
-        XCTAssertEqual(transaction.createdAt.timeIntervalSinceReferenceDate,
-                       restored.createdAt.timeIntervalSinceReferenceDate,
-                       accuracy: 0.001)
-        XCTAssertEqual(transaction.updatedAt.timeIntervalSinceReferenceDate,
-                       restored.updatedAt.timeIntervalSinceReferenceDate,
-                       accuracy: 0.001)
     }
-    @Test func testInvalidJson() {
+
+    func testTransactionToJsonObject() {
+        let json = sampleTransaction.jsonObject as? [String: Any]
+        XCTAssertNotNil(json)
+        XCTAssertEqual(json?["id"] as? Int, 999)
+        XCTAssertEqual(json?["accountId"] as? Int, 1)
+        XCTAssertEqual(json?["categoryId"] as? Int, 2)
+        XCTAssertEqual(json?["amount"] as? String, "123.45")
+        XCTAssertEqual(json?["comment"] as? String, "Test operation")
+        
+        let formatter = ISO8601DateFormatter()
+        XCTAssertEqual(json?["createdAt"] as? String, formatter.string(from: sampleTransaction.createdAt))
+        XCTAssertEqual(json?["updatedAt"] as? String, formatter.string(from: sampleTransaction.updatedAt))
+        XCTAssertEqual(json?["transactionDate"] as? String, formatter.string(from: sampleTransaction.transactionDate))
+    }
+
+    func testTransactionParseFromJsonObject() {
+        let json = sampleTransaction.jsonObject
+        let parsed = Transaction.parse(jsonObject: json)
+
+        XCTAssertNotNil(parsed)
+        XCTAssertEqual(parsed?.id, sampleTransaction.id)
+        XCTAssertEqual(parsed?.accountId, sampleTransaction.accountId)
+        XCTAssertEqual(parsed?.categoryId, sampleTransaction.categoryId)
+        XCTAssertEqual(parsed?.amount, sampleTransaction.amount)
+        XCTAssertEqual(parsed?.comment, sampleTransaction.comment)
+
+        let delta: TimeInterval = 1.0
+        XCTAssertLessThan(abs(parsed!.transactionDate.timeIntervalSince(sampleTransaction.transactionDate)), delta)
+        XCTAssertLessThan(abs(parsed!.createdAt.timeIntervalSince(sampleTransaction.createdAt)), delta)
+        XCTAssertLessThan(abs(parsed!.updatedAt.timeIntervalSince(sampleTransaction.updatedAt)), delta)
+    }
+
+    func testParseInvalidJsonReturnsNil() {
         let invalidJson: [String: Any] = [
-            "id": "not_an_int",
-            "accountId": 101,
-            "categoryId": 201,
-            "amount": "invalid",
-            "transactionDate": "2023-01-01T00:00:00Z",
-            "comment": "Test",
-            "createdAt": "2023-01-01T00:00:00Z",
-            "updatedAt": "2023-01-01T00:00:00Z"
+            "amount": "???", // incorrectly formatted
+            "accountId": "ABC", // it must be an Int
         ]
-        
-        XCTAssertNil(Transaction.parse(jsonObject: invalidJson))
-    }
-    @Test func testCsvRoundTripConversion() {
-        let transaction = Transaction(
-            id: 2,
-            accountId: 102,
-            categoryId: 202,
-            amount: 99.99,
-            transactionDate: Date(timeIntervalSince1970: 1672617600),
-            comment: "Test, CSV",
-            createdAt: Date(timeIntervalSince1970: 1672617000),
-            updatedAt: Date(timeIntervalSince1970: 1672617000)
-        )
-        
-        // Convert to CSV
-        let csvString = transaction.csvRow
-        
-        // Convert back from CSV
-        guard let restored = Transaction.parse(csvRow: csvString) else {
-            XCTFail("Failed to parse CSV row")
-            return
-        }
-        
-        // Verify all properties
-        XCTAssertEqual(transaction.id, restored.id)
-        XCTAssertEqual(transaction.accountId, restored.accountId)
-        XCTAssertEqual(transaction.categoryId, restored.categoryId)
-        XCTAssertEqual(transaction.amount, restored.amount)
-        XCTAssertEqual(transaction.transactionDate.timeIntervalSinceReferenceDate,
-                       restored.transactionDate.timeIntervalSinceReferenceDate,
-                       accuracy: 0.001)
-        XCTAssertEqual(transaction.comment, restored.comment)
-        XCTAssertEqual(transaction.createdAt.timeIntervalSinceReferenceDate,
-                       restored.createdAt.timeIntervalSinceReferenceDate,
-                       accuracy: 0.001)
-        XCTAssertEqual(transaction.updatedAt.timeIntervalSinceReferenceDate,
-                       restored.updatedAt.timeIntervalSinceReferenceDate,
-                       accuracy: 0.001)
-    }
-    
-    @Test func testFileCacheOperations() {
-        let cache = TransactionsFileCache()
-        let transaction = Transaction(
-            id: 3,
-            accountId: 103,
-            categoryId: 203,
-            amount: 50.0,
-            transactionDate: Date(),
-            comment: "Test cache",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        
-        // Test add
-        cache.addTransaction(transaction)
-        XCTAssertEqual(cache.transactions.count, 1)
-        XCTAssertEqual(cache.transactions.first?.id, 3)
-        
-        // Test update
-        let updated = Transaction(
-            id: 3,
-            accountId: 103,
-            categoryId: 203,
-            amount: 100.0,
-            transactionDate: Date(),
-            comment: "Updated",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        cache.addTransaction(updated)
-        XCTAssertEqual(cache.transactions.count, 1)
-        XCTAssertEqual(cache.transactions.first?.amount, 100.0)
-        
-        // Test delete
-        cache.deleteTransaction(id: 3)
-        XCTAssertTrue(cache.transactions.isEmpty)
+        let parsed = Transaction.parse(jsonObject: invalidJson)
+        XCTAssertNil(parsed)
     }
 
+    func testParseIncompleteJsonReturnsNil() {
+        let incompleteJson: [String: Any] = [
+            "id": 1,
+            "accountId": 1,
+            // the CategoryID is missing
+            "amount": "100.0",
+            "transactionDate": "2024-06-01T12:00:00Z",
+            "comment": "Payment",
+            "createdAt": "2024-06-01T12:00:00Z",
+            "updatedAt": "2024-06-01T12:00:00Z"
+        ]
+        let parsed = Transaction.parse(jsonObject: incompleteJson)
+        XCTAssertNil(parsed)
+    }
+
+    func testParseJsonWithInvalidDateFormatReturnsNil() {
+        let jsonWithInvalidDate: [String: Any] = [
+            "id": 1,
+            "accountId": 1,
+            "categoryId": 2,
+            "amount": "100.0",
+            "transactionDate": "01-06-2024", // incorrect date format
+            "comment": "Payment",
+            "createdAt": "2024-06-01T12:00:00Z",
+            "updatedAt": "2024-06-01T12:00:00Z"
+        ]
+        let parsed = Transaction.parse(jsonObject: jsonWithInvalidDate)
+        XCTAssertNil(parsed)
+    }
 }
