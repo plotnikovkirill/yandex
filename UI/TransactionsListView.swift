@@ -132,7 +132,7 @@ struct TransactionsListView: View {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay)!
-
+	
         do {
             let all = try await transactionsService.transactions(accountId: 1, from: startOfDay, to: endOfDay)
             let filteredCategories = try await categoriesService.categories(for: direction)

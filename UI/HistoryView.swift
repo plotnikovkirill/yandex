@@ -37,8 +37,8 @@ struct HistoryView: View {
                             Spacer()
                             DatePicker("", selection: $startDate, displayedComponents: [.date])
                                 .labelsHidden()
-                                .accentColor(Color("AccentColor"))
-                                .background(Color("AccentColor"))
+                                .accentColor(Color("LightAccentColor"))
+                                .background(Color("LightAccentColor"))
                                 .cornerRadius(10)
                                 .onChange(of: startDate) {
                                     if startDate > endDate { endDate = startDate }
@@ -51,8 +51,8 @@ struct HistoryView: View {
                             Spacer()
                             DatePicker("", selection: $endDate, in: ...Date(), displayedComponents: [.date])
                                 .labelsHidden()
-                                .accentColor(Color("AccentColor"))
-                                .background(Color("AccentColor"))
+                                .accentColor(Color("LightAccentColor"))
+                                .background(Color("LightAccentColor"))
                                 .cornerRadius(10)
                                 .onChange(of: endDate) {
                                     if endDate < startDate { startDate = endDate }

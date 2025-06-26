@@ -1,10 +1,3 @@
-//
-//  MainTabView.swift
-//  FinanceTamer
-//
-//  Created by Aliia Gumirova on 19.06.2025.
-//
-
 import SwiftUI
 
 struct MainTabView: View {
@@ -27,7 +20,7 @@ struct MainTabView: View {
                         Text("Доходы")
                     }
                 
-                Text("Счет")
+                AccountView()
                     .tabItem {
                         Image("Score")
                             .renderingMode(.template)
