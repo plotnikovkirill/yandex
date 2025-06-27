@@ -9,7 +9,7 @@ import SwiftUI
 // MARK: - Валютный пикер
 struct CurrencyPickerView: View {
     @Binding var selectedCurrency: String
-    let currencies = ["RUB", "USD", "EUR", "GBP", "JPY", "CNY"]
+    let currencies = ["RUB", "USD", "EUR"]
     
     var body: some View {
         NavigationView {

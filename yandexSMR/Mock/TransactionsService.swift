@@ -17,10 +17,10 @@ final class TransactionsService {
             accountId: 1,
             categoryId: 1,
             amount: 2999.99,
-            transactionDate: Date().addingTimeInterval(-3600),
+            transactionDate: Date().addingTimeInterval(-36),
             comment: "Dinner in cafe",
-            createdAt: Date().addingTimeInterval(-3600),
-            updatedAt: Date().addingTimeInterval(-3600)
+            createdAt: Date().addingTimeInterval(-36),
+            updatedAt: Date().addingTimeInterval(-36)
         ),
         Transaction(
             id: 2,
@@ -38,10 +38,10 @@ final class TransactionsService {
             accountId: 1,
             categoryId: 2,
             amount: 5000,
-            transactionDate: Date().addingTimeInterval(-3600),
+            transactionDate: Date().addingTimeInterval(-36),
             comment: "asdadsda",
-            createdAt: Date().addingTimeInterval(-3600),
-            updatedAt: Date().addingTimeInterval(-3600)
+            createdAt: Date().addingTimeInterval(-36),
+            updatedAt: Date().addingTimeInterval(-36)
         )
         ,
         Transaction(
@@ -49,10 +49,10 @@ final class TransactionsService {
             accountId: 1,
             categoryId: 4,
             amount: 6000,
-            transactionDate: Date().addingTimeInterval(-3600),
+            transactionDate: Date().addingTimeInterval(-36),
             comment: "asdasdsadd",
-            createdAt: Date().addingTimeInterval(-3600),
-            updatedAt: Date().addingTimeInterval(-3600)
+            createdAt: Date().addingTimeInterval(-36),
+            updatedAt: Date().addingTimeInterval(-36)
         )
     ]
     

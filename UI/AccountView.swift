@@ -9,20 +9,23 @@ import SwiftUI
 
 struct AccountView: View {
     @StateObject private var viewModel = AccountViewModel()
-        @State private var isEditing = false
-        @State private var showCurrencyPicker = false
-        
-        var body: some View {
-            NavigationView {
+    @State private var isEditing = false
+    @State private var showCurrencyPicker = false
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color("Background").ignoresSafeArea()
+                
                 List {
-                    // Секция баланса
                     Section(header: Text("Баланс")) {
                         if isEditing {
                             HStack {
-                                Text("Баланс")
+                                Text("💰 Баланс")
                                     .font(.headline)
+                                    .foregroundColor(Color("TextColor"))
                                 Spacer()
-                                TextField("Введите сумму", text: $viewModel.balanceInput)
+                                TextField("Введите сумму", text: $viewModel.balanceInput) //TODO: сделать отображение текущего баланса
                                     .keyboardType(.decimalPad)
                                     .multilineTextAlignment(.trailing)
                                     .onChange(of: viewModel.balanceInput) { newValue in
@@ -37,12 +40,12 @@ struct AccountView: View {
                                         }
                                     }
                             }
+                            
                         } else {
-                            // Отображение баланса (только для чтения)
                             HStack {
-                                Text("Баланс")
+                                Text("💰 Баланс")
                                     .font(.headline)
-                                
+                                    .foregroundColor(Color("TextColor"))
                                 Spacer()
                                 
                                 if viewModel.balanceHidden {
@@ -54,6 +57,7 @@ struct AccountView: View {
                             }
                         }
                     }
+                    .listRowBackground(isEditing ? Color.white : Color("AccentColor"))
                     
                     // Секция валюты
                     Section(header: Text("Валюта")) {
@@ -81,8 +85,10 @@ struct AccountView: View {
                             }
                         }
                     }
+                    .listRowBackground(isEditing ? Color.white : Color("AccentColor").opacity(0.5))
                 }
-                .listStyle(InsetGroupedListStyle())
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden) // Важно!
                 .navigationTitle("Мой счёт")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -117,12 +123,13 @@ struct AccountView: View {
                 }
             }
         }
+        .background(Color("Background").ignoresSafeArea()) // Фон для NavigationView
+    }
 }
 
 
 
 
-// MARK: - Расширение для обнаружения встряхивания
 extension UIDevice {
     static let deviceDidShakeNotification = Notification.Name(rawValue: "deviceDidShakeNotification")
 }

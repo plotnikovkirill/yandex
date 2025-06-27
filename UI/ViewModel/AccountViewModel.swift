@@ -7,7 +7,7 @@
 import SwiftUI
 // MARK: - ViewModel для экрана счета
 class AccountViewModel: ObservableObject {
-    let currencies = ["RUB", "USD", "EUR", "GBP", "JPY", "CNY"]
+    let currencies = ["RUB", "USD", "EUR"]
     @Published var balance: Decimal = 0.0
     @Published var currency: String = "RUB"
     @Published var balanceHidden = false
