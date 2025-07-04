@@ -135,7 +135,7 @@ class TransactionsListViewModel: ObservableObject {
     
     private func loadCategories() async {
         do {
-            let loadedCategories = try await categoriesService.categories(for: direction)
+            let loadedCategories = try await categoriesService.getCategories(by: direction)
             DispatchQueue.main.async {
                 self.categories = loadedCategories
             }

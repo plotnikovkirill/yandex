@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct yandexSMRApp: App {
+    @StateObject private var dependencies = AppDependencies()
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .environmentObject(dependencies)
         }
     }
 }
