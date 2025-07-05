@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MainTabView: View {
-
+    @EnvironmentObject private var dependencies: AppDependencies
     var body: some View {
         TabView {
             
@@ -27,7 +27,9 @@ struct MainTabView: View {
                         Text("Счет")
                     }
                 
-                Text("Статьи")
+                CategoriesView(
+                    categoriesService: dependencies.categoryService
+                )
                     .tabItem {
                         Image("Articles")
                             .renderingMode(.template)

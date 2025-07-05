@@ -203,11 +203,11 @@ struct HistoryView: View {
                 to: dayEnd
             )
             let ids = try await categoriesService
-                .categories(for: direction)
+                .getCategories(by: direction)
                 .map(\.id)
             
             let filtered = all.filter { ids.contains($0.categoryId) }
-            let categories = try await categoriesService.categories(for: direction)
+            let categories = try await categoriesService.getCategories(by: direction)
             let categoryIds = Set(categories.map(\.id))
             DispatchQueue.main.async {
                 self.allCategories = categories

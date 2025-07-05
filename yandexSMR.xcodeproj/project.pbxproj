@@ -45,6 +45,11 @@
 			path = yandexSMRUITests;
 			sourceTree = "<group>";
 		};
+		EDC025162E18D503006E339F /* Utils */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Utils;
+			sourceTree = "<group>";
+		};
 		EDC71C692E04B21D00AFF975 /* UI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = UI;
@@ -80,6 +85,7 @@
 		ED4A18D12DFC8CB10006A426 = {
 			isa = PBXGroup;
 			children = (
+				EDC025162E18D503006E339F /* Utils */,
 				EDC71C692E04B21D00AFF975 /* UI */,
 				ED4A18DC2DFC8CB10006A426 /* yandexSMR */,
 				ED4A18EA2DFC8CB50006A426 /* yandexSMRTests */,
@@ -115,6 +121,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				ED4A18DC2DFC8CB10006A426 /* yandexSMR */,
+				EDC025162E18D503006E339F /* Utils */,
 				EDC71C692E04B21D00AFF975 /* UI */,
 			);
 			name = yandexSMR;
@@ -415,7 +422,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = kiryushka123;
+				PRODUCT_BUNDLE_IDENTIFIER = qwqdwdq;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -443,7 +450,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = kiryushka123;
+				PRODUCT_BUNDLE_IDENTIFIER = qwqdwdq;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
