@@ -28,6 +28,7 @@ struct AccountView: View {
                                 TextField("Введите сумму", text: $viewModel.balanceInput) //TODO: сделать отображение текущего баланса
                                     .keyboardType(.decimalPad)
                                     .multilineTextAlignment(.trailing)
+                                    .scrollDismissesKeyboard(.immediately)
                                     .onChange(of: viewModel.balanceInput) { newValue in
                                         viewModel.filterBalanceInput(newValue)
                                     }
@@ -123,7 +124,6 @@ struct AccountView: View {
                 }
             }
         }
-        .background(Color("Background").ignoresSafeArea()) // Фон для NavigationView
     }
 }
 

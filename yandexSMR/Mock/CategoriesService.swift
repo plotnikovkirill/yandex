@@ -1,28 +1,33 @@
-//
-//  CategoriesService.swift
-//  yandexSMR
-//
-//  Created by kirill on 19.06.2025.
-//
-
-
 import Foundation
 
-final class CategoriesService {
-    
-    private let mockCategories: [Category] = [
-        Category(id: 1, name: "Salary", emoji: "💰", isIncome: true),
-        Category(id: 2, name: "Food", emoji: "🍔", isIncome: false),
-        Category(id: 3, name: "Gifts", emoji: "🎁", isIncome: true),
-        Category(id: 4, name: "Transport", emoji: "🚌", isIncome: false)
-    ]
-    
-    func categories() async throws -> [Category] {
-        return mockCategories
-    }
-    
-    func categories(for direction: Direction) async throws -> [Category] {
-        return mockCategories.filter { $0.direction == direction }
-    }
+protocol CategoriesServiceLogic {
+    func getAllCategories() async throws -> [Category]
+    func getCategories(by direction: Direction) async throws -> [Category]
 }
 
+final actor CategoriesService: CategoriesServiceLogic {
+    // MARK: - Methods
+    func getAllCategories() async throws -> [Category] {
+        try await categories()
+    }
+    
+    func getCategories(by direction: Direction) async throws -> [Category] {
+        try await categories().filter { $0.direction == direction }
+    }
+    
+    // MARK: - Private Methods
+    private func categories() async throws -> [Category] {
+        [
+            Category(id: 0, name: "Аренда квартиры", emoji: "🏠", isIncome: false),
+            Category(id: 1, name: "Одежда", emoji: "👔", isIncome: false),
+            Category(id: 2, name: "На собачку", emoji: "🐕", isIncome: false),
+            Category(id: 3, name: "Ремонт квартиры", emoji: "⚒️", isIncome: false),
+            Category(id: 4, name: "Продукты", emoji: "🛒", isIncome: false),
+            Category(id: 5, name: "Спортзал", emoji: "🏈", isIncome: false),
+            Category(id: 6, name: "Медицина", emoji: "🫚", isIncome: false),
+            Category(id: 7, name: "Аптека", emoji: "💊", isIncome: false),
+            Category(id: 8, name: "Машина", emoji: "🚗", isIncome: false),
+            Category(id: 9, name: "Зарплата", emoji: "💸", isIncome: true)
+        ]
+    }
+}
