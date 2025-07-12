@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Transaction: Identifiable, Codable {
+struct Transaction: Identifiable, Codable, Equatable {
     let id: Int
     let accountId: Int
     let categoryId: Int
@@ -27,6 +27,9 @@ struct Transaction: Identifiable, Codable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
+    static func == (lhs: Transaction, rhs: Transaction) -> Bool {
+            lhs.id == rhs.id
+        }
 }
 
 

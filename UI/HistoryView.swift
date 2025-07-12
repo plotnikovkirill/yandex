@@ -8,6 +8,7 @@ import SwiftUI
 
 struct HistoryView: View {
     let direction: Direction
+    @State private var transactionToEdit: Transaction?
     @State private var allCategories: [Category] = []
     @State private var startDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     @State private var endDate: Date = Date()
@@ -26,6 +27,9 @@ struct HistoryView: View {
             backgroundColor
             mainContent
         }
+        .sheet(item: $transactionToEdit, onDismiss: { loadTransactionsAsync() }) { transaction in
+                    TransactionEditView(mode: .edit(transaction: transaction))
+                }
         .confirmationDialog(
             "Сортировать по:",
             isPresented: $showSortOptions,
@@ -123,13 +127,18 @@ struct HistoryView: View {
     
     private var operationsSection: some View {
         Section(header: sectionHeader) {
-            ForEach(transactions.indices, id: \.self) { idx in
-                let transaction = transactions[idx]
-                let category = allCategories.first { $0.id == transaction.categoryId }
-                
-                TransactionRow(transaction: transaction, category: category)
-                    .listRowBackground(Color.white)
-            }
+            ForEach(transactions) { transaction in
+                            let category = allCategories.first { $0.id == transaction.categoryId }
+                            
+                            // ИЗМЕНЕНО: Оборачиваем в Button
+                            Button(action: {
+                                transactionToEdit = transaction
+                            }) {
+                                TransactionRow(transaction: transaction, category: category, showEmojiBackground: true)
+                                    .foregroundColor(.primary)
+                            }
+                            .listRowBackground(Color.white)
+                        }
         }
     }
     
@@ -158,9 +167,9 @@ struct HistoryView: View {
     }
     
     private var exportButton: some View {
-        Button(action: {}) {
+        NavigationLink(destination: AnalysisView(direction: direction).ignoresSafeArea()) {
             Image(systemName: "doc")
-                .foregroundColor(Color(.black))
+                .foregroundColor(Color("ClockColor"))
         }
     }
     
