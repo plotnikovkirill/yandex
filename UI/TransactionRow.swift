@@ -11,17 +11,18 @@ import SwiftUI
 struct TransactionRow: View {
     let transaction: Transaction
     let category: Category?  // Категория передаётся извне
-    
+    var showEmojiBackground: Bool = false
     var body: some View {
         HStack(spacing: 12) {
             if let category = category {
                 ZStack {
-                    Circle()
-                        .fill(Color("ImageBackgroundColor"))
-                        .frame(width: 22, height: 22)
-                    
+                    if showEmojiBackground {
+                                            Circle()
+                                                .fill(Color("CategoryBackColor"))
+                                                .frame(width: 34, height: 34)
+                                        }
                     Text(String(category.emoji))
-                        .font(.system(size: 12))
+                        .font(.system(size: 16))
                 }
                 .frame(width: 34, height: 34)
                 
