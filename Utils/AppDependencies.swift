@@ -9,18 +9,32 @@ import SwiftUI
 
 @MainActor
 final class AppDependencies: ObservableObject {
-    // Единый сетевой клиент для всего приложения
+    // Сетевые сервисы
     private let networkClient = NetworkClient()
+    private let transactionService: TransactionsServiceLogic
+    private let bankAccountService: BankAccountsServiceLogic
+    private let categoryService: CategoriesServiceLogic
     
-    // Сервисы, которые будут использовать этот клиент
-    let bankAccountService: BankAccountsServiceLogic
-    let transactionService: TransactionsServiceLogic
-    let categoryService: CategoriesServiceLogic
+    // Хранилище
+    private let swiftDataStorage = SwiftDataStorage()
     
+    // Репозитории
+    let transactionsRepository: TransactionsRepository
+    let accountsRepository: AccountsRepository
+    // TODO: Добавить CategoryRepository
+
     init() {
-        // Создаем сервисы, передавая им наш единый networkClient
-        self.bankAccountService = BankAccountsService(networkClient: networkClient)
         self.transactionService = TransactionsService(networkClient: networkClient)
+        self.bankAccountService = BankAccountsService(networkClient: networkClient)
         self.categoryService = CategoriesService(networkClient: networkClient)
+        
+        self.transactionsRepository = TransactionsRepository(
+            networkService: self.transactionService,
+            storage: self.swiftDataStorage
+        )
+        self.accountsRepository = AccountsRepository(
+            networkService: self.bankAccountService,
+            storage: self.swiftDataStorage
+        )
     }
 }

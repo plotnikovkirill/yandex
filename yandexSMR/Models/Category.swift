@@ -6,12 +6,13 @@
 //
 
 import Foundation
-
-struct Category: Identifiable, Codable, Hashable{
-    let id: Int
-    let name: String
-    let emoji: Character
-    let isIncome: Bool
+import SwiftData
+@Model
+final class Category: Identifiable, Hashable{
+    var id: Int
+    var name: String
+    var emoji: Character
+    var isIncome: Bool
     
     var direction: Direction {
         isIncome ? .income : .outcome

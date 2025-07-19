@@ -5,75 +5,47 @@
 //  Created by kirill on 25.06.2025.
 //
 import SwiftUI
-// MARK: - ViewModel для экрана счета
+import Combine
+
+@MainActor
 class AccountViewModel: ObservableObject {
-    let currencies = ["RUB", "USD", "EUR"]
     @Published var balance: Decimal = 0.0
     @Published var currency: String = "RUB"
     @Published var balanceHidden = false
-    @Published var editingBalance = false
     @Published var balanceInput = ""
     @Published var errorMessage: String?
-        @Published var isLoading = false
+
+    let currencies = ["RUB", "USD", "EUR"]
     
-    private let accountsService: BankAccountsServiceLogic
-    
-    init(accountsService: BankAccountsServiceLogic) {
-        self.accountsService = accountsService
-        loadAccountData()
+    private let repository: AccountsRepository
+    private var cancellables = Set<AnyCancellable>()
+
+    init(repository: AccountsRepository) {
+        self.repository = repository
+        
+        repository.$primaryAccount
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] account in
+                self?.balance = account?.balance ?? 0
+                self?.currency = account?.currency ?? "RUB"
+            }
+            .store(in: &cancellables)
     }
     
-    // Загрузка данных счета
-    func loadAccountData() {
-            Task { @MainActor in
-                isLoading = true
-                errorMessage = nil
-                defer { isLoading = false }
-                
-                do {
-                    let account = try await accountsService.fetchAccount(userId: 1)
-                    self.balance = account.balance
-                    self.currency = account.currency
-                } catch {
-                    self.errorMessage = error.localizedDescription
-                }
-            }
-        }
-    
-    // Обновление данных (pull to refresh)
     func refreshData() async {
-        await MainActor.run {
-            balanceInput = ""
-            editingBalance = false
+        await repository.fetchPrimaryAccount()
+    }
+
+    func applyBalanceInput() {
+        if let newBalance = Decimal(string: balanceInput) {
+            balance = newBalance
         }
-        loadAccountData()
     }
     
-    // Сохранение изменений
     func saveChanges() {
-            Task { @MainActor in
-                isLoading = true
-                errorMessage = nil
-                defer { isLoading = false }
-                
-                let requestBody = AccountUpdateRequest(
-                    name: "Основной счет", // Имя пока захардкожено
-                    balance: "\(balance)",
-                    currency: currency
-                )
-                
-                do {
-                    // Предполагаем, что id счета всегда 1
-                    let updatedAccount = try await accountsService.updateAccount(id: 1, requestBody: requestBody)
-                    self.balance = updatedAccount.balance
-                    self.currency = updatedAccount.currency
-                } catch {
-                    self.errorMessage = error.localizedDescription
-                }
-            }
-        }
+        // TODO: Реализовать через репозиторий с логикой бэкапа
+    }
     
-    // Фильтрация ввода баланса
     func filterBalanceInput(_ input: String) {
         // Разрешаем только цифры и точку
         let filtered = input.filter { "0123456789.".contains($0) }
@@ -91,14 +63,6 @@ class AccountViewModel: ObservableObject {
         if components.count == 2 && components[1].count > 2 {
             balanceInput = components[0] + "." + String(components[1].prefix(2))
         }
-    }
-    
-    // Применение введенного баланса
-    func applyBalanceInput() {
-        if let newBalance = Decimal(string: balanceInput) {
-            balance = newBalance
-        }
-        balanceInput = ""
     }
     
     // Вставка из буфера обмена

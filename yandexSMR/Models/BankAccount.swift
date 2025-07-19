@@ -6,14 +6,15 @@
 //
 
 import Foundation
-
-struct BankAccount: Identifiable, Codable {
-    let id: Int
-    let userId: Int
+import SwiftData
+@Model
+final class BankAccount: Identifiable{
+    var id: Int
+    var userId: Int
     var name: String
     var balance: Decimal
     var currency: String
-    let createdAt: Date
+    var createdAt: Date
     var updatedAt: Date
 
     init(id: Int, userId: Int, name: String, balance: Decimal, currency: String, createdAt: Date, updatedAt: Date) {
