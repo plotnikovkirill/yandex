@@ -14,6 +14,7 @@ class AccountViewModel: ObservableObject {
     @Published var balanceHidden = false
     @Published var balanceInput = ""
     @Published var errorMessage: String?
+    @Published var isLoading = false
 
     let currencies = ["RUB", "USD", "EUR"]
     
@@ -23,13 +24,11 @@ class AccountViewModel: ObservableObject {
     init(repository: AccountsRepository) {
         self.repository = repository
         
+        repository.$isLoading
+                    .receive(on: DispatchQueue.main)
+                    .assign(to: &$isLoading)
+                    
         repository.$primaryAccount
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] account in
-                self?.balance = account?.balance ?? 0
-                self?.currency = account?.currency ?? "RUB"
-            }
-            .store(in: &cancellables)
     }
     
     func refreshData() async {

@@ -6,12 +6,15 @@
 //
 
 import Foundation
-
+import Combine
 @MainActor
 final class CategoriesViewModel: ObservableObject {
     // MARK: - Properties
-    private let categoriesService: CategoriesServiceLogic
+    private let repository: CategoryRepository
+    @Published private(set) var categories: [Category] = []
     @Published var errorMessage: String?
+    @Published var isLoading: Bool = false
+    @Published var searchText: String = ""
     
     var filteredCategories: [Category] {
         guard !searchText.isEmpty else { return categories }
@@ -24,17 +27,19 @@ final class CategoriesViewModel: ObservableObject {
             .map(\.name)
             .filter { $0.fuzzyMatch(searchText) }
     }
-
-    
-    // MARK: - Published
-    @Published var isLoading: Bool = false
-    @Published var searchText: String = ""
-    @Published private(set) var categories: [Category] = []
     
     // MARK: - Lifecycle
-    init(categoriesService: CategoriesServiceLogic) {
-        self.categoriesService = categoriesService
-    }
+    init(repository: CategoryRepository) {
+            self.repository = repository
+            
+            repository.$isLoading
+                .receive(on: DispatchQueue.main)
+                .assign(to: &$isLoading)
+                
+            repository.$allCategories
+                .receive(on: DispatchQueue.main)
+                .assign(to: &$categories)
+        }
     
     // MARK: - Methods
     func fetchCategories() async {
@@ -42,16 +47,7 @@ final class CategoriesViewModel: ObservableObject {
             errorMessage = nil // Сбрасываем старую ошибку
             defer { isLoading = false }
             
-            do {
-                categories = try await categoriesService.getAllCategories()
-            } catch {
-                // ИЗМЕНЕНО: Сохраняем текст ошибки для показа в алерте
-                if let networkError = error as? NetworkError {
-                    errorMessage = networkError.errorDescription
-                } else {
-                    errorMessage = error.localizedDescription
-                }
-            }
+            await repository.fetchAllCategories()
         }
 }
 

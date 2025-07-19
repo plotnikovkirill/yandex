@@ -1,9 +1,3 @@
-//
-//  TransactionsListViewModel.swift
-//  yandexSMR
-//
-//  Created by kirill on 26.06.2025.
-//
 import SwiftUI
 import Combine
 
@@ -13,38 +7,48 @@ class TransactionsListViewModel: ObservableObject {
     @Published var totalAmount: Decimal = 0
     @Published var sortOption: SortOption = .byDate
     
-    @Published private(set) var isLoading = false
+    @Published var isLoading = false
     @Published var errorMessage: String?
     
     private let direction: Direction
-    private let repository: TransactionsRepository
-    private var cancellables = Set<AnyCancellable>()
-    // Для получения ID счета
-    private let accountsRepository: AccountsRepository
+    // Делаем репозитории публичными, чтобы View могли их передавать дальше
+    let transactionsRepository: TransactionsRepository
+    let accountsRepository: AccountsRepository
+    let categoryRepository: CategoryRepository
 
-    init(direction: Direction, repository: TransactionsRepository, accountsRepository: AccountsRepository) {
+    private var cancellables = Set<AnyCancellable>()
+
+    init(direction: Direction,
+         transactionsRepository: TransactionsRepository,
+         accountsRepository: AccountsRepository,
+         categoryRepository: CategoryRepository) {
         self.direction = direction
-        self.repository = repository
+        self.transactionsRepository = transactionsRepository
         self.accountsRepository = accountsRepository
+        self.categoryRepository = categoryRepository
         
-        repository.$isLoading
+        // Подписки на изменения в репозиториях
+        transactionsRepository.$isLoading
             .receive(on: DispatchQueue.main)
             .assign(to: &$isLoading)
         
-        repository.$error
+        transactionsRepository.$error
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] error in
-                self?.errorMessage = error?.localizedDescription
-            }
+            .sink { [weak self] error in self?.errorMessage = error?.localizedDescription }
             .store(in: &cancellables)
     }
 
     func loadInitialData() async {
-        guard let accountId = accountsRepository.currentAccountId else {
-            // Если ID еще не загружен, ждем его
+        // Сначала убедимся, что базовые данные (счет, категории) загружены
+        if accountsRepository.currentAccountId == nil {
             await accountsRepository.fetchPrimaryAccount()
-            // Повторяем попытку
-            await loadInitialData()
+        }
+        if categoryRepository.allCategories.isEmpty {
+            await categoryRepository.fetchAllCategories()
+        }
+        
+        guard let accountId = accountsRepository.currentAccountId else {
+            errorMessage = "Не удалось загрузить счет пользователя."
             return
         }
         
@@ -52,10 +56,9 @@ class TransactionsListViewModel: ObservableObject {
         let startOfDay = Calendar.current.startOfDay(for: now)
         let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: now) ?? now
         
-        let loadedTransactions = await repository.getTransactions(for: accountId, from: startOfDay, to: endOfDay)
+        let loadedTransactions = await transactionsRepository.getTransactions(for: accountId, from: startOfDay, to: endOfDay)
         
-        // Фильтруем по направлению
-        self.transactions = loadedTransactions.filter { ($0.categoryId < 9 && direction == .outcome) || ($0.categoryId == 9 && direction == .income) }
+        self.transactions = loadedTransactions.filter { category(for: $0)?.direction == direction }
         self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
         applySort()
     }
@@ -69,5 +72,7 @@ class TransactionsListViewModel: ObservableObject {
         }
     }
     
-    // Старые методы для категорий и пагинации пока убираем, они будут в репозитории
+    func category(for transaction: Transaction) -> Category? {
+        return categoryRepository.getCategory(id: transaction.categoryId)
+    }
 }

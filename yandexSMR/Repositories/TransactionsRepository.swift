@@ -31,96 +31,73 @@ final class TransactionsRepository: ObservableObject {
         isOffline = false
         defer { isLoading = false }
         
-        // 1. Пытаемся синхронизировать отложенные операции
         await syncPendingOperations()
         
         do {
-            // 2. Идем в сеть за свежими данными
             let freshTransactions = try await networkService.fetchTransactions(accountId: accountId, from: startDate, to: endDate)
-            // 3. Сохраняем свежие данные в локальное хранилище
             try await storage.upsert(freshTransactions)
-            // 4. Возвращаем данные, отфильтрованные локально (на случай, если серверная фильтрация неточна)
-            return (try? await storage.fetch(from: startDate, to: endDate)) ?? []
+            return try await storage.fetch(from: startDate, to: endDate)
         } catch {
-            // 5. Если сеть упала, идем в локальное хранилище
             self.error = error
             self.isOffline = true
-            // TODO: Смержить с данными из бэкапа
-            return (try? await storage.fetch(from: startDate, to: endDate)) ?? []
+            let localTransactions = (try? await storage.fetch(from: startDate, to: endDate)) ?? []
+            let pendingOperations = (try? await backupStorage.fetchAll()) ?? []
+            return merge(local: localTransactions, pending: pendingOperations)
         }
     }
     
     func createTransaction(_ transaction: Transaction) async {
-        isLoading = true
-        error = nil
-        isOffline = false
-        defer { isLoading = false }
+        isLoading = true; defer { isLoading = false }
+        
+        // 1. Оптимистичное обновление UI и локальной базы
+        try? await storage.upsert([transaction])
         
         do {
-            // Пытаемся отправить на сервер
+            // 2. Пытаемся отправить на сервер
             let createdTransaction = try await networkService.createTransaction(from: transaction)
-            // Если успешно, сохраняем в основное хранилище
+            // 3. Если успешно, обновляем локальную запись (сервер мог вернуть другой ID или дату)
             try await storage.upsert([createdTransaction])
         } catch {
-            // Если ошибка, сохраняем в бэкап
-            self.error = error
-            self.isOffline = true
+            // 4. Если ошибка, сохраняем операцию в бэкап
+            self.error = error; self.isOffline = true
             let pendingOp = PendingOperation(type: .create, transaction: transaction)
             try? await backupStorage.save(pendingOp)
-            // И все равно сохраняем в основное хранилище, чтобы пользователь видел результат
-            try? await storage.upsert([transaction])
         }
     }
-
+    
     func updateTransaction(_ transaction: Transaction) async {
-        isLoading = true
-        error = nil
-        isOffline = false
-        defer { isLoading = false }
+        isLoading = true; defer { isLoading = false }
+        
+        try? await storage.upsert([transaction])
         
         do {
-            // Пытаемся отправить на сервер
-            let createdTransaction = try await networkService.createTransaction(from: transaction)
-            // Если успешно, сохраняем в основное хранилище
-            try await storage.upsert([createdTransaction])
+            let updatedTransaction = try await networkService.updateTransaction(transaction)
+            try await storage.upsert([updatedTransaction])
         } catch {
-            // Если ошибка, сохраняем в бэкап
-            self.error = error
-            self.isOffline = true
+            self.error = error; self.isOffline = true
             let pendingOp = PendingOperation(type: .update, transaction: transaction)
             try? await backupStorage.save(pendingOp)
-            // И все равно сохраняем в основное хранилище, чтобы пользователь видел результат
-            try? await storage.upsert([transaction])
         }
     }
     
     func deleteTransaction(id: Int) async {
-        isLoading = true
-        error = nil
-        isOffline = false
-        defer { isLoading = false }
+        isLoading = true; defer { isLoading = false }
+        
+        try? await storage.delete(id: id)
         
         do {
-            // Пытаемся отправить на сервер
-            let createdTransaction = try await networkService.createTransaction(from: transaction)
-            // Если успешно, сохраняем в основное хранилище
-            try await storage.upsert([createdTransaction])
+            try await networkService.deleteTransaction(id: id)
         } catch {
-            // Если ошибка, сохраняем в бэкап
-            self.error = error
-            self.isOffline = true
-            let pendingOp = PendingOperation(type: .delete, transaction: transaction)
+            self.error = error; self.isOffline = true
+            let pendingOp = PendingOperation(type: .delete, transactionId: id)
             try? await backupStorage.save(pendingOp)
-            // И все равно сохраняем в основное хранилище, чтобы пользователь видел результат
-            try? await storage.upsert([transaction])
         }
     }
 
-    // --- СИНХРОНИЗАЦИЯ ---
+    // --- СИНХРОНИЗАЦИЯ и СЛИЯНИЕ ---
+    
     private func syncPendingOperations() async {
-        guard let pending = try? await backupStorage.fetchAll(), !pending.isEmpty else {
-            return
-        }
+        guard let pending = try? await backupStorage.fetchAll(), !pending.isEmpty else { return }
         
         print("Starting sync for \(pending.count) pending operations.")
         
@@ -128,27 +105,50 @@ final class TransactionsRepository: ObservableObject {
             do {
                 switch operation.type {
                 case .create:
-                    if let data = operation.transactionData,
-                       let transaction = try? JSONDecoder.custom.decode(Transaction.self, from: data) {
+                    if let data = operation.transactionData, let transaction = try? JSONDecoder.custom.decode(Transaction.self, from: data) {
                         _ = try await networkService.createTransaction(from: transaction)
                     }
                 case .update:
-                    if let data = operation.transactionData,
-                       let transaction = try? JSONDecoder.custom.decode(Transaction.self, from: data) {
-                        _ = try await networkService.updateTransaction(id: 107, requestBody: transaction)
+                    if let data = operation.transactionData, let transaction = try? JSONDecoder.custom.decode(Transaction.self, from: data) {
+                        _ = try await networkService.updateTransaction(transaction)
                     }
                 case .delete:
                     if let id = operation.transactionId {
                        try await networkService.deleteTransaction(id: id)
                     }
                 }
-                // Если операция на сервере прошла успешно, удаляем ее из бэкапа
                 try await backupStorage.delete(operation)
             } catch {
-                // Если при синхронизации произошла ошибка, прекращаем попытки до следующего раза
                 print("Sync failed for operation \(operation.id): \(error). Stopping sync.")
                 break
             }
         }
+    }
+    
+    private func merge(local: [Transaction], pending: [PendingOperation]) -> [Transaction] {
+        var merged = local
+        let decoder = JSONDecoder.custom
+        
+        for op in pending {
+            switch op.type {
+            case .create:
+                if let data = op.transactionData, let tx = try? decoder.decode(Transaction.self, from: data) {
+                    if !merged.contains(where: { $0.id == tx.id }) {
+                        merged.append(tx)
+                    }
+                }
+            case .update:
+                if let data = op.transactionData, let tx = try? decoder.decode(Transaction.self, from: data) {
+                    if let index = merged.firstIndex(where: { $0.id == tx.id }) {
+                        merged[index] = tx
+                    }
+                }
+            case .delete:
+                if let id = op.transactionId {
+                    merged.removeAll(where: { $0.id == id })
+                }
+            }
+        }
+        return merged
     }
 }

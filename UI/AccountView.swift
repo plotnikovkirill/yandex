@@ -12,8 +12,8 @@ struct AccountView: View {
     @State private var isEditing = false
     @State private var showCurrencyPicker = false
     
-    init(viewModel: AccountViewModel = AccountViewModel(accountsService: BankAccountsService())) { // Оставляем значение по умолчанию для превью
-            _viewModel = StateObject(wrappedValue: viewModel)
+    init(viewModel: AccountViewModel) { // Оставляем значение по умолчанию для превью
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
     var body: some View {
         NavigationView {

@@ -12,13 +12,13 @@
 					<key>EndingColumnNumber</key>
 					<string>0</string>
 					<key>EndingLineNumber</key>
-					<string>73</string>
+					<string>102</string>
 					<key>StartingColumnNumber</key>
 					<string>0</string>
 					<key>StartingLineNumber</key>
-					<string>72</string>
+					<string>102</string>
 					<key>Timestamp</key>
-					<string>774571197.875417</string>
+					<string>774612152.4677449</string>
 				</dict>
 				<key>rebasable-url</key>
 				<dict>
@@ -34,17 +34,13 @@
 			<key>text-context</key>
 			<dict>
 				<key>focused</key>
-				<string>    }
-</string>
+				<string></string>
 				<key>leading</key>
-				<string>        // Сначала выполняем то, что в скобках, потом применяем `??`
-        self.categories = (try? await categoriesService.getCategories(by: direction)) ?? []
+				<string>    }
+}
 </string>
 				<key>trailing</key>
-				<string>    
-    // (Задание **) Валидация
-    private func validate() -&gt; Bool {
-</string>
+				<string></string>
 			</dict>
 			<key>title</key>
 			<string>Error: Value of optional type '[Category]?' not unwrapped; did you mean to use 'try!' or chain with '?'?</string>

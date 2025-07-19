@@ -10,7 +10,7 @@ import Foundation
 @MainActor
 final class AccountsRepository: ObservableObject {
     @Published private(set) var primaryAccount: BankAccount?
-    
+    @Published var isLoading = false
     private let networkService: BankAccountsServiceLogic
     private let storage: AccountStorage
     
@@ -20,6 +20,8 @@ final class AccountsRepository: ObservableObject {
     }
     
     func fetchPrimaryAccount() async {
+        isLoading = true
+        defer { isLoading = false }
         do {
             let account = try await networkService.fetchAccount(userId: 107)
             try await storage.upsert([account])
