@@ -110,7 +110,7 @@ final class AnalysisViewController: UIViewController {
             do {
                 let categoriesForDirection = try await categoriesService.getCategories(by: direction)
                 let categoryIds = Set(categoriesForDirection.map(\.id))
-                let allTransactions = try await transactionsService.transactions(accountId: 1, from: dayStart, to: dayEnd)
+                let allTransactions = try await transactionsService.fetchTransactions(accountId: 1, from: dayStart, to: dayEnd)
                 
                 let filtered = allTransactions.filter { categoryIds.contains($0.categoryId) }
                 
@@ -278,7 +278,7 @@ extension AnalysisViewController: UITableViewDataSource, UITableViewDelegate {
         
         if indexPath.section == 2 {
             let transaction = transactions[indexPath.row]
-            let editView = TransactionEditView(mode: .edit(transaction: transaction))
+            let editView = TransactionEditView(mode: .edit(transaction: transaction), transactionsService: TransactionsService())
             let hostingController = UIHostingController(rootView: editView)
             present(hostingController, animated: true, completion: nil)
         }

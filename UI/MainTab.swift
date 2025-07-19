@@ -6,21 +6,33 @@ struct MainTabView: View {
         TabView {
             
             Group{
-                TransactionsListView(direction: .outcome)
+                TransactionsListView(direction: .outcome,
+                                     viewModel: TransactionsListViewModel(
+                                         direction: .outcome,
+                                         transactionsService: dependencies.transactionService,
+                                         categoriesService: dependencies.categoryService
+                                     ))
                     .tabItem {
                         Image("Expenses")
                             .renderingMode(.template)
                         Text("Расходы")
                     }
                 
-                TransactionsListView(direction: .income)
+                TransactionsListView(direction: .income,
+                                     viewModel: TransactionsListViewModel(
+                                         direction: .income,
+                                         transactionsService: dependencies.transactionService,
+                                         categoriesService: dependencies.categoryService
+                                     ))
                     .tabItem {
                         Image("Income")
                             .renderingMode(.template)
                         Text("Доходы")
                     }
                 
-                AccountView()
+                AccountView(viewModel: AccountViewModel(
+                    accountsService: dependencies.bankAccountService
+                ))
                     .tabItem {
                         Image("Score")
                             .renderingMode(.template)
@@ -28,7 +40,9 @@ struct MainTabView: View {
                     }
                 
                 CategoriesView(
-                    categoriesService: dependencies.categoryService
+                    viewModel: CategoriesViewModel(
+                                       categoriesService: dependencies.categoryService
+                                   )
                 )
                     .tabItem {
                         Image("Articles")

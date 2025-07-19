@@ -12,7 +12,7 @@ struct TransactionEditView: View {
     @StateObject private var viewModel: TransactionEditViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(mode: TransactionScreenMode) {
+    init(mode: TransactionScreenMode, transactionsService: TransactionsServiceLogic ) {
         _viewModel = StateObject(wrappedValue: TransactionEditViewModel(mode: mode))
     }
 

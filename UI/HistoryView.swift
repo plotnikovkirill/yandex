@@ -28,7 +28,7 @@ struct HistoryView: View {
             mainContent
         }
         .sheet(item: $transactionToEdit, onDismiss: { loadTransactionsAsync() }) { transaction in
-                    TransactionEditView(mode: .edit(transaction: transaction))
+            TransactionEditView(mode: .edit(transaction: transaction), transactionsService: TransactionsService())
                 }
         .confirmationDialog(
             "Сортировать по:",
@@ -206,7 +206,7 @@ struct HistoryView: View {
         let dayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
         
         do {
-            let all = try await transactionsService.transactions(
+            let all = try await transactionsService.fetchTransactions(
                 accountId: 1,
                 from: dayStart,
                 to: dayEnd

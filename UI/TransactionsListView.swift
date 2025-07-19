@@ -15,10 +15,10 @@ struct TransactionsListView: View {
     @StateObject private var viewModel: TransactionsListViewModel
     @State private var isShowingAddSheet = false
     @State private var transactionToEdit: Transaction?
-    init(direction: Direction) {
+    init(direction: Direction, viewModel: TransactionsListViewModel) {
         self.direction = direction
         // Инициализация ViewModel с правильным направлением
-        _viewModel = StateObject(wrappedValue: TransactionsListViewModel(direction: direction))
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
     
     var body: some View {
@@ -30,10 +30,10 @@ struct TransactionsListView: View {
             addButton
         }
         .sheet(isPresented: $isShowingAddSheet, onDismiss: { Task { await viewModel.loadInitialData() }}) {
-            TransactionEditView(mode: .create(direction: direction))
+            TransactionEditView(mode: .create(direction: direction),transactionsService: viewModel.transactionsService)
         }
         .sheet(item: $transactionToEdit, onDismiss: { Task { await viewModel.loadInitialData() }}) { transaction in
-            TransactionEditView(mode: .edit(transaction: transaction))
+            TransactionEditView(mode: .edit(transaction: transaction),transactionsService: viewModel.transactionsService)
         }
         // Добавляем обработчики для всего контейнера
         .confirmationDialog("Сортировать по:", isPresented: $showSortOptions, titleVisibility: .visible) {

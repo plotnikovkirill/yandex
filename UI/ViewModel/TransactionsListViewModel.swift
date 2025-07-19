@@ -22,11 +22,13 @@ class TransactionsListViewModel: ObservableObject {
         currentPage
     }
     
-    private let transactionsService = TransactionsService()
-    private let categoriesService = CategoriesService()
+    public let transactionsService: TransactionsServiceLogic
+    public let categoriesService: CategoriesServiceLogic
     
-    init(direction: Direction) {
+    init(direction: Direction, transactionsService: TransactionsServiceLogic, categoriesService: CategoriesServiceLogic) {
         self.direction = direction
+        self.transactionsService = transactionsService
+        self.categoriesService = categoriesService
     }
     
     func loadInitialData() async {
@@ -54,7 +56,7 @@ class TransactionsListViewModel: ObservableObject {
         let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay)!
         
         do {
-            let allTransactions = try await transactionsService.transactions(accountId: 1, from: startOfDay, to: endOfDay)
+            let allTransactions = try await transactionsService.fetchTransactions(accountId: 107, from: startOfDay, to: endOfDay)
             
             // Фильтрация по категориям
             let categoryIds = Set(categories.map { $0.id })

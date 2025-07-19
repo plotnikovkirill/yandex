@@ -7,105 +7,102 @@
 
 import Foundation
 
-final class TransactionsService {
+protocol TransactionsServiceLogic {
+    func fetchTransactions(accountId: Int, from startDate: Date, to endDate: Date) async throws -> [Transaction]
+    func createTransaction(requestBody: TransactionRequest) async throws -> Transaction
+    func updateTransaction(id: Int, requestBody: TransactionRequest) async throws -> Transaction
+    func deleteTransaction(id: Int) async throws
+}
+
+final class TransactionsService: TransactionsServiceLogic {
     
-    private var nextId: Int = 5
+    private let networkClient: NetworkClient
+
+    init(networkClient: NetworkClient = NetworkClient()) {
+        self.networkClient = networkClient
+    }
     
-    private var transactions: [Transaction] = [
-        Transaction(
-            id: 1,
-            accountId: 1,
-            categoryId: 1,
-            amount: 2999.99,
-            transactionDate: Date().addingTimeInterval(-36),
-            comment: "Dinner in cafe",
-            createdAt: Date().addingTimeInterval(-36),
-            updatedAt: Date().addingTimeInterval(-36)
-        ),
-        Transaction(
-            id: 2,
-            accountId: 1,
-            categoryId: 1,
-            amount: 5000,
-            transactionDate: Date().addingTimeInterval(-86400 * 2),
-            comment: "Salary",
-            createdAt: Date().addingTimeInterval(-86400 * 2),
-            updatedAt: Date().addingTimeInterval(-86400 * 2)
+    func fetchTransactions(accountId: Int, from startDate: Date, to endDate: Date) async throws -> [Transaction] {
+        let endpoint = "transactions/account/\(accountId)/period"
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        // ИЗМЕНЕНО: Создаем словарь с query-параметрами
+        let query = [
+            "from": formatter.string(from: startDate),
+            "to": formatter.string(from: endDate)
+        ]
+        
+        let emptyBody: EmptyBody? = nil
+        let responses: [TransactionResponse] = try await networkClient.request(
+            endpoint: endpoint,
+            method: .get,
+            body: emptyBody, // <--- Добавлено
+            query: query
         )
-        ,
-        Transaction(
-            id: 3,
-            accountId: 1,
-            categoryId: 2,
-            amount: 5000,
-            transactionDate: Date().addingTimeInterval(-36),
-            comment: "asdadsda",
-            createdAt: Date().addingTimeInterval(-36),
-            updatedAt: Date().addingTimeInterval(-36)
-        )
-        ,
-        Transaction(
-            id: 4,
-            accountId: 1,
-            categoryId: 4,
-            amount: 6000,
-            transactionDate: Date().addingTimeInterval(-36),
-            comment: "asdasdsadd",
-            createdAt: Date().addingTimeInterval(-36),
-            updatedAt: Date().addingTimeInterval(-36)
-        )
-    ]
-    
-    func transactions(accountId: Int, from startDate: Date, to endDate: Date) async throws -> [Transaction] {
-        return transactions.filter {
-            $0.accountId == accountId &&
-            $0.transactionDate >= startDate &&
-            $0.transactionDate <= endDate
+        
+        // ИЗМЕНЕНО: Теперь нам не нужна клиентская фильтрация, сервер сделал это за нас!
+        let transactions = responses.map { response in
+            return Transaction(id: response.id,
+                               accountId: response.account.id,           // <-- Извлекаем id
+                               categoryId: response.category.id,         // <-- Извлекаем id
+                               amount: Decimal(string: response.amount) ?? 0, // <-- Конвертируем String в Decimal
+                               transactionDate: response.transactionDate,
+                               comment: response.comment,
+                               createdAt: response.createdAt,
+                               updatedAt: response.updatedAt)
         }
+        
+        return transactions
+
     }
 
-    
-    func create(accountId: Int, categoryId: Int, amount: Decimal, transactionDate: Date, comment: String) async throws -> Transaction {
-        let now = Date()
-        let transaction = Transaction(
-            id: nextId,
-            accountId: accountId,
-            categoryId: categoryId,
-            amount: amount,
-            transactionDate: transactionDate,
-            comment: comment,
-            createdAt: now,
-            updatedAt: now
+    func createTransaction(requestBody: TransactionRequest) async throws -> Transaction {
+        // Сервер, скорее всего, в ответ на POST вернет тот же TransactionResponse
+        let response: TransactionResponse = try await networkClient.request(
+            endpoint: "transactions",
+            method: .post,
+            body: requestBody
         )
-        transactions.append(transaction)
-        nextId += 1
-        return transaction
+        // Мапим ответ в нашу внутреннюю модель
+        return Transaction(
+            id: response.id,
+            accountId: response.account.id,
+            categoryId: response.category.id,
+            amount: Decimal(string: response.amount) ?? 0,
+            transactionDate: response.transactionDate,
+            comment: response.comment,
+            createdAt: response.createdAt,
+            updatedAt: response.updatedAt
+        )
     }
-
     
-    func update(_ transaction: Transaction) async throws -> Transaction? {
-        if let index = transactions.firstIndex(where: { $0.id == transaction.id }) {
-            let updatedTransaction = Transaction(
-                id: transaction.id,
-                accountId: transaction.accountId,
-                categoryId: transaction.categoryId,
-                amount: transaction.amount,
-                transactionDate: transaction.transactionDate,
-                comment: transaction.comment,
-                createdAt: transactions[index].createdAt,
-                updatedAt: Date()
-            )
-            transactions[index] = updatedTransaction
-            return updatedTransaction
-        }
-        return nil
+    func updateTransaction(id: Int, requestBody: TransactionRequest) async throws -> Transaction {
+        // Аналогично для PUT
+        let response: TransactionResponse = try await networkClient.request(
+            endpoint: "transactions/\(id)",
+            method: .put,
+            body: requestBody
+        )
+        return Transaction(
+            id: response.id,
+            accountId: response.account.id,
+            categoryId: response.category.id,
+            amount: Decimal(string: response.amount) ?? 0,
+            transactionDate: response.transactionDate,
+            comment: response.comment,
+            createdAt: response.createdAt,
+            updatedAt: response.updatedAt
+        )
     }
 
-    
-    func delete(id: Int) async throws -> Bool {
-        let originalCount = transactions.count
-        transactions.removeAll { $0.id == id }
-        return transactions.count < originalCount
+    func deleteTransaction(id: Int) async throws {
+        struct EmptyResponse: Decodable {}
+        let emptyBody: EmptyBody? = nil
+        let _: EmptyResponse = try await networkClient.request(
+            endpoint: "transactions/\(id)",
+            method: .delete,
+            body: emptyBody
+        )
     }
-
 }

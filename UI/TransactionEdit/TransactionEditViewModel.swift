@@ -22,9 +22,8 @@ enum TransactionScreenMode {
 final class TransactionEditViewModel: ObservableObject {
     // MARK: - Зависимости
     private let categoriesService = CategoriesService()
-    private let transactionsService = TransactionsService()
     private let bankAccountService = BankAccountsService()
-
+    private let transactionsService: TransactionsServiceLogic
     // MARK: - Состояние формы
     @Published var amountString: String = ""
     @Published var selectedCategory: Category?
@@ -47,9 +46,9 @@ final class TransactionEditViewModel: ObservableObject {
             return "Редактирование"
         }
     }
-    init(mode: TransactionScreenMode) {
+    init(mode: TransactionScreenMode, transactionsService: TransactionsServiceLogic = TransactionsService()) {
         self.mode = mode
-        
+        self.transactionsService = transactionsService
         switch mode {
         case .create(let direction):
             Task { await fetchCategories(for: direction) }
@@ -97,42 +96,42 @@ final class TransactionEditViewModel: ObservableObject {
     }
 
     func save() async throws {
-        guard validate() else { return }
-        
-        let cleanedAmount = amountString.replacingOccurrences(of: ",", with: ".")
-        let amount = Decimal(string: cleanedAmount) ?? 0
+            guard validate() else { return }
+            
+            let cleanedAmount = amountString.replacingOccurrences(of: ",", with: ".")
+            
+            switch mode {
+            case .create:
+                guard let primaryAccount = try? await bankAccountService.fetchAccount(userId: 1),
+                      let selectedCategory = selectedCategory else { return }
+                
+                // ИЗМЕНЕНО: Создаем DTO для запроса
+                let requestBody = TransactionRequest(
+                    accountId: primaryAccount.id,
+                    categoryId: selectedCategory.id,
+                    amount: cleanedAmount,
+                    transactionDate: transactionDate,
+                    comment: comment
+                )
+                _ = try await transactionsService.createTransaction(requestBody: requestBody)
 
-        switch mode {
-        case .create:
-            guard let primaryAccount = try? await bankAccountService.accountForUser(userId: 1),
-                  let selectedCategory = selectedCategory else { return }
-                  
-            _ = try await transactionsService.create(
-                accountId: primaryAccount.id,
-                categoryId: selectedCategory.id,
-                amount: amount,
-                transactionDate: transactionDate,
-                comment: comment
-            )
-
-        case .edit(let transaction):
-            // Создаем совершенно новый экземпляр Transaction с обновленными данными
-            let updatedTransaction = Transaction(
-                id: transaction.id,                         // Старое значение
-                accountId: transaction.accountId,           // Старое значение
-                categoryId: selectedCategory!.id,           // Новое значение
-                amount: amount,                             // Новое значение
-                transactionDate: transactionDate,           // Новое значение
-                comment: comment,                           // Новое значение
-                createdAt: transaction.createdAt,           // Старое значение
-                updatedAt: Date()                           // Новое значение
-            )
-            _ = try await transactionsService.update(updatedTransaction)
+            case .edit(let transaction):
+                // ИЗМЕНЕНО: Создаем DTO для запроса
+                let requestBody = TransactionRequest(
+                    accountId: transaction.accountId,
+                    categoryId: selectedCategory!.id,
+                    amount: cleanedAmount,
+                    transactionDate: transactionDate,
+                    comment: comment
+                )
+                _ = try await transactionsService.updateTransaction(id: transaction.id, requestBody: requestBody)
+            }
         }
-    }
 
-    func delete() async throws {
-        guard case let .edit(transaction) = mode else { return }
-        _ = try await transactionsService.delete(id: transaction.id)
-    }
+        func delete() async throws {
+            guard case let .edit(transaction) = mode else { return }
+            // ИЗМЕНЕНО: Вызываем новый метод
+            try await transactionsService.deleteTransaction(id: transaction.id)
+        }
 }
+

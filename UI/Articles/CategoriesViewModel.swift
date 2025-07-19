@@ -10,7 +10,8 @@ import Foundation
 @MainActor
 final class CategoriesViewModel: ObservableObject {
     // MARK: - Properties
-    private let categoriesService: CategoriesService
+    private let categoriesService: CategoriesServiceLogic
+    @Published var errorMessage: String?
     
     var filteredCategories: [Category] {
         guard !searchText.isEmpty else { return categories }
@@ -31,21 +32,27 @@ final class CategoriesViewModel: ObservableObject {
     @Published private(set) var categories: [Category] = []
     
     // MARK: - Lifecycle
-    init(categoriesService: CategoriesService) {
+    init(categoriesService: CategoriesServiceLogic) {
         self.categoriesService = categoriesService
     }
     
     // MARK: - Methods
     func fetchCategories() async {
-        isLoading = true
-        defer { isLoading = false }
-        
-        do {
-            categories = try await categoriesService.getAllCategories()
-        } catch {
-            print(error.localizedDescription)
+            isLoading = true
+            errorMessage = nil // Сбрасываем старую ошибку
+            defer { isLoading = false }
+            
+            do {
+                categories = try await categoriesService.getAllCategories()
+            } catch {
+                // ИЗМЕНЕНО: Сохраняем текст ошибки для показа в алерте
+                if let networkError = error as? NetworkError {
+                    errorMessage = networkError.errorDescription
+                } else {
+                    errorMessage = error.localizedDescription
+                }
+            }
         }
-    }
 }
 
 // MARK: - Fuzzy Search Extension

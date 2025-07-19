@@ -13,27 +13,32 @@ class AccountViewModel: ObservableObject {
     @Published var balanceHidden = false
     @Published var editingBalance = false
     @Published var balanceInput = ""
+    @Published var errorMessage: String?
+        @Published var isLoading = false
     
-    private let accountsService = BankAccountsService()
+    private let accountsService: BankAccountsServiceLogic
     
-    init() {
+    init(accountsService: BankAccountsServiceLogic) {
+        self.accountsService = accountsService
         loadAccountData()
     }
     
     // Загрузка данных счета
     func loadAccountData() {
-        Task {
-            do {
-                let account = try await accountsService.accountForUser(userId: 1)
-                DispatchQueue.main.async {
+            Task { @MainActor in
+                isLoading = true
+                errorMessage = nil
+                defer { isLoading = false }
+                
+                do {
+                    let account = try await accountsService.fetchAccount(userId: 1)
                     self.balance = account.balance
                     self.currency = account.currency
+                } catch {
+                    self.errorMessage = error.localizedDescription
                 }
-            } catch {
-                print("Ошибка загрузки данных счета: \(error)")
             }
         }
-    }
     
     // Обновление данных (pull to refresh)
     func refreshData() async {
@@ -46,24 +51,27 @@ class AccountViewModel: ObservableObject {
     
     // Сохранение изменений
     func saveChanges() {
-        let newAccount = BankAccount(
-            id: 1, // Пример ID
-            userId: 1, // Пример ID пользователя
-            name: "Основной счет",
-            balance: balance,
-            currency: currency,
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        
-        Task {
-            do {
-                try await accountsService.updateAccount(id: newAccount.id, name: newAccount.name, balance: newAccount.balance, currency: newAccount.currency)
-            } catch {
-                print("Ошибка сохранения счета: \(error)")
+            Task { @MainActor in
+                isLoading = true
+                errorMessage = nil
+                defer { isLoading = false }
+                
+                let requestBody = AccountUpdateRequest(
+                    name: "Основной счет", // Имя пока захардкожено
+                    balance: "\(balance)",
+                    currency: currency
+                )
+                
+                do {
+                    // Предполагаем, что id счета всегда 1
+                    let updatedAccount = try await accountsService.updateAccount(id: 1, requestBody: requestBody)
+                    self.balance = updatedAccount.balance
+                    self.currency = updatedAccount.currency
+                } catch {
+                    self.errorMessage = error.localizedDescription
+                }
             }
         }
-    }
     
     // Фильтрация ввода баланса
     func filterBalanceInput(_ input: String) {
