@@ -52,15 +52,20 @@ struct TransactionsListView: View {
                 }
             }
         }
-        .task {
-            // Загружаем данные один раз при первом появлении
-            await viewModel.loadInitialData()
-        }
+//        .task {
+//            // Загружаем данные один раз при первом появлении
+//            await viewModel.loadInitialData()
+//        }
         .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "Произошла неизвестная ошибка")
         }
+        .onAppear {
+                Task {
+                    await viewModel.loadInitialData()
+                }
+            }
     }
     
     // MARK: - Subviews

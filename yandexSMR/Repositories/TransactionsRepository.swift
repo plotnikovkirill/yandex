@@ -54,11 +54,17 @@ final class TransactionsRepository: ObservableObject {
         
         do {
             // 2. Пытаемся отправить на сервер
-            let createdTransaction = try await networkService.createTransaction(from: transaction)
-            // 3. Если успешно, обновляем локальную запись (сервер мог вернуть другой ID или дату)
-            try await storage.upsert([createdTransaction])
+            let createdTransactionFromServer = try await networkService.createTransaction(from: transaction)
+            
+            // 3. УСПЕХ: Удаляем старую временную транзакцию
+            try? await storage.delete(id: transaction.id)
+            
+            // 4. Сохраняем новую транзакцию с настоящим ID от сервера
+            try await storage.upsert([createdTransactionFromServer])
+            
         } catch {
-            // 4. Если ошибка, сохраняем операцию в бэкап
+            // 5. ОШИБКА: Сети нет. Сохраняем операцию в бэкап.
+            // Локальная транзакция уже сохранена, так что UI выглядит корректно.
             self.error = error; self.isOffline = true
             let pendingOp = PendingOperation(type: .create, transaction: transaction)
             try? await backupStorage.save(pendingOp)

@@ -21,7 +21,7 @@ struct CategoriesView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                if viewModel.isLoading {
+                if viewModel.isLoading && viewModel.categories.isEmpty {
                     ProgressView()
                 }
                 else{
@@ -48,9 +48,6 @@ struct CategoriesView: View {
                             Text(suggestion).searchCompletion(suggestion)
                         }
                     }
-                    .task {
-                        await viewModel.fetchCategories()
-                    }
                 }
                 
             }
@@ -62,6 +59,9 @@ struct CategoriesView: View {
                         }, message: {
                             Text(viewModel.errorMessage ?? "Произошла неизвестная ошибка.")
                         })
+            .refreshable {
+                            await viewModel.fetchCategories()
+                        }
         }
     }
 }
