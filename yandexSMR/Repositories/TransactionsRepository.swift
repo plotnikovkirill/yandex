@@ -1,31 +1,32 @@
-//
-//  TransactionsRepository.swift
-//  yandexSMR
-//
-//  Created by kirill on 18.07.2025.
-//
-
 import Foundation
 
 @MainActor
 final class TransactionsRepository: ObservableObject {
-    private let networkService: TransactionsServiceLogic
-    private let storage: TransactionStorage
-    private let backupStorage: BackupStorage
-
+    // MARK: - Published Properties
+    @Published private(set) var transactions: [Transaction] = []
     @Published var isLoading = false
     @Published var error: Error?
     @Published private(set) var isOffline = false
 
-    init(networkService: TransactionsServiceLogic, storage: TransactionStorage, backupStorage: BackupStorage) {
+    // MARK: - Dependencies
+    private let networkService: TransactionsServiceLogic
+    private let storage: TransactionStorage
+    private let backupStorage: BackupStorage
+    private let accountsRepository: AccountsRepository
+
+    init(networkService: TransactionsServiceLogic,
+         storage: TransactionStorage,
+         backupStorage: BackupStorage,
+         accountsRepository: AccountsRepository) {
         self.networkService = networkService
         self.storage = storage
         self.backupStorage = backupStorage
+        self.accountsRepository = accountsRepository
     }
 
-    // --- ОСНОВНАЯ ЛОГИКА ---
+    // MARK: - Public Methods
 
-    func getTransactions(for accountId: Int, from startDate: Date, to endDate: Date) async -> [Transaction] {
+    func getTransactions(for accountId: Int, from startDate: Date, to endDate: Date) async {
         isLoading = true
         error = nil
         isOffline = false
@@ -36,39 +37,32 @@ final class TransactionsRepository: ObservableObject {
         do {
             let freshTransactions = try await networkService.fetchTransactions(accountId: accountId, from: startDate, to: endDate)
             try await storage.upsert(freshTransactions)
-            return try await storage.fetch(from: startDate, to: endDate)
+            self.transactions = try await storage.fetch(from: startDate, to: endDate)
         } catch {
             self.error = error
             self.isOffline = true
             let localTransactions = (try? await storage.fetch(from: startDate, to: endDate)) ?? []
             let pendingOperations = (try? await backupStorage.fetchAll()) ?? []
-            return merge(local: localTransactions, pending: pendingOperations)
+            self.transactions = merge(local: localTransactions, pending: pendingOperations)
         }
     }
     
     func createTransaction(_ transaction: Transaction) async {
         isLoading = true; defer { isLoading = false }
         
-        // 1. Оптимистичное обновление UI и локальной базы
         try? await storage.upsert([transaction])
         
         do {
-            // 2. Пытаемся отправить на сервер
-            let createdTransactionFromServer = try await networkService.createTransaction(from: transaction)
-            
-            // 3. УСПЕХ: Удаляем старую временную транзакцию
-            try? await storage.delete(id: transaction.id)
-            
-            // 4. Сохраняем новую транзакцию с настоящим ID от сервера
-            try await storage.upsert([createdTransactionFromServer])
-            
+            let createdTransaction = try await networkService.createTransaction(from: transaction)
+            try await storage.delete(id: transaction.id) // Удаляем временную
+            try await storage.upsert([createdTransaction]) // Сохраняем серверную
+            await accountsRepository.fetchPrimaryAccount() // Обновляем баланс
         } catch {
-            // 5. ОШИБКА: Сети нет. Сохраняем операцию в бэкап.
-            // Локальная транзакция уже сохранена, так что UI выглядит корректно.
             self.error = error; self.isOffline = true
             let pendingOp = PendingOperation(type: .create, transaction: transaction)
             try? await backupStorage.save(pendingOp)
         }
+        await refreshCurrentTransactionList()
     }
     
     func updateTransaction(_ transaction: Transaction) async {
@@ -79,11 +73,13 @@ final class TransactionsRepository: ObservableObject {
         do {
             let updatedTransaction = try await networkService.updateTransaction(transaction)
             try await storage.upsert([updatedTransaction])
+            await accountsRepository.fetchPrimaryAccount() // Обновляем баланс
         } catch {
             self.error = error; self.isOffline = true
             let pendingOp = PendingOperation(type: .update, transaction: transaction)
             try? await backupStorage.save(pendingOp)
         }
+        await refreshCurrentTransactionList()
     }
     
     func deleteTransaction(id: Int) async {
@@ -93,30 +89,31 @@ final class TransactionsRepository: ObservableObject {
         
         do {
             try await networkService.deleteTransaction(id: id)
+            await accountsRepository.fetchPrimaryAccount() // Обновляем баланс
         } catch {
             self.error = error; self.isOffline = true
             let pendingOp = PendingOperation(type: .delete, transactionId: id)
             try? await backupStorage.save(pendingOp)
         }
+        await refreshCurrentTransactionList()
     }
 
-    // --- СИНХРОНИЗАЦИЯ и СЛИЯНИЕ ---
+    // MARK: - Private Helper Methods
     
     private func syncPendingOperations() async {
         guard let pending = try? await backupStorage.fetchAll(), !pending.isEmpty else { return }
-        
         print("Starting sync for \(pending.count) pending operations.")
         
         for operation in pending {
             do {
                 switch operation.type {
                 case .create:
-                    if let data = operation.transactionData, let transaction = try? JSONDecoder.custom.decode(Transaction.self, from: data) {
-                        _ = try await networkService.createTransaction(from: transaction)
+                    if let data = operation.transactionData, let tx = try? JSONDecoder.custom.decode(Transaction.self, from: data) {
+                        _ = try await networkService.createTransaction(from: tx)
                     }
                 case .update:
-                    if let data = operation.transactionData, let transaction = try? JSONDecoder.custom.decode(Transaction.self, from: data) {
-                        _ = try await networkService.updateTransaction(transaction)
+                    if let data = operation.transactionData, let tx = try? JSONDecoder.custom.decode(Transaction.self, from: data) {
+                        _ = try await networkService.updateTransaction(tx)
                     }
                 case .delete:
                     if let id = operation.transactionId {
@@ -126,35 +123,41 @@ final class TransactionsRepository: ObservableObject {
                 try await backupStorage.delete(operation)
             } catch {
                 print("Sync failed for operation \(operation.id): \(error). Stopping sync.")
-                break
+                break // Прерываем синхронизацию при первой же ошибке
             }
         }
+        // После успешной синхронизации нужно обновить баланс
+        await accountsRepository.fetchPrimaryAccount()
     }
     
     private func merge(local: [Transaction], pending: [PendingOperation]) -> [Transaction] {
-        var merged = local
+        var mergedDict = [Int: Transaction]()
+        local.forEach { mergedDict[$0.id] = $0 }
+        
         let decoder = JSONDecoder.custom
         
         for op in pending {
             switch op.type {
-            case .create:
+            case .create, .update:
                 if let data = op.transactionData, let tx = try? decoder.decode(Transaction.self, from: data) {
-                    if !merged.contains(where: { $0.id == tx.id }) {
-                        merged.append(tx)
-                    }
-                }
-            case .update:
-                if let data = op.transactionData, let tx = try? decoder.decode(Transaction.self, from: data) {
-                    if let index = merged.firstIndex(where: { $0.id == tx.id }) {
-                        merged[index] = tx
-                    }
+                    mergedDict[tx.id] = tx
                 }
             case .delete:
                 if let id = op.transactionId {
-                    merged.removeAll(where: { $0.id == id })
+                    mergedDict.removeValue(forKey: id)
                 }
             }
         }
-        return merged
+        return Array(mergedDict.values)
+    }
+    
+    // Перезагружает текущий список транзакций, чтобы UI обновился
+    private func refreshCurrentTransactionList() async {
+        guard let accountId = accountsRepository.currentAccountId else { return }
+        // Используем очень широкий диапазон дат, чтобы захватить все транзакции.
+        // В реальном приложении здесь могла бы быть более сложная логика.
+        let veryOldDate = Date.distantPast
+        let futureDate = Date.distantFuture
+        await getTransactions(for: accountId, from: veryOldDate, to: futureDate)
     }
 }

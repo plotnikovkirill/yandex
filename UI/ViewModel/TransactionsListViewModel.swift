@@ -3,13 +3,15 @@ import Combine
 
 @MainActor
 class TransactionsListViewModel: ObservableObject {
-    @Published var transactions: [Transaction] = []
+    // MARK: - Published Properties for UI
+    @Published var transactions: [Transaction] = [] // Отфильтрованные транзакции для этого View
     @Published var totalAmount: Decimal = 0
     @Published var sortOption: SortOption = .byDate
     
     @Published var isLoading = false
     @Published var errorMessage: String?
     
+    // MARK: - Dependencies
     private let direction: Direction
     // Делаем репозитории публичными, чтобы View могли их передавать дальше
     let transactionsRepository: TransactionsRepository
@@ -27,19 +29,39 @@ class TransactionsListViewModel: ObservableObject {
         self.accountsRepository = accountsRepository
         self.categoryRepository = categoryRepository
         
-        // Подписки на изменения в репозиториях
+        // --- КЛЮЧЕВЫЕ ИЗМЕНЕНИЯ ---
+        
+        // 1. Подписываемся на isLoading из репозитория
         transactionsRepository.$isLoading
             .receive(on: DispatchQueue.main)
             .assign(to: &$isLoading)
         
+        // 2. Подписываемся на ошибки из репозитория
         transactionsRepository.$error
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in self?.errorMessage = error?.localizedDescription }
             .store(in: &cancellables)
+            
+        // 3. Подписываемся на ОБЩИЙ список транзакций из репозитория
+        transactionsRepository.$transactions
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] allTransactions in
+                guard let self = self else { return }
+                
+                // Фильтруем полученный список по нашему направлению (доход/расход)
+                self.transactions = allTransactions.filter {
+                    self.category(for: $0)?.direction == self.direction
+                }
+                
+                // Пересчитываем сумму и применяем сортировку
+                self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
+                self.applySort()
+            }
+            .store(in: &cancellables)
     }
 
     func loadInitialData() async {
-        // Сначала убедимся, что базовые данные (счет, категории) загружены
+        // Убеждаемся, что базовые данные загружены
         if accountsRepository.currentAccountId == nil {
             await accountsRepository.fetchPrimaryAccount()
         }
@@ -56,11 +78,9 @@ class TransactionsListViewModel: ObservableObject {
         let startOfDay = Calendar.current.startOfDay(for: now)
         let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: now) ?? now
         
-        let loadedTransactions = await transactionsRepository.getTransactions(for: accountId, from: startOfDay, to: endOfDay)
-        
-        self.transactions = loadedTransactions.filter { category(for: $0)?.direction == direction }
-        self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
-        applySort()
+        // Просто запускаем загрузку в репозитории.
+        // Результат придет через подписку (sink) выше.
+        await transactionsRepository.getTransactions(for: accountId, from: startOfDay, to: endOfDay)
     }
     
     func applySort() {

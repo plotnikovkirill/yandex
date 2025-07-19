@@ -5,17 +5,19 @@ import Combine
 
 @MainActor
 class HistoryViewModel: ObservableObject {
-    @Published var transactions: [Transaction] = []
+    // MARK: - Published Properties for UI
+    @Published var transactions: [Transaction] = [] // Отфильтрованные транзакции для этого View
     @Published var totalAmount: Decimal = 0
     @Published var sortOption: SortOption = .byDate
     @Published var startDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     @Published var endDate: Date = Date()
     @Published var transactionToEdit: Transaction?
     
-    @Published private(set) var isLoading = false
+    @Published var isLoading = false
     @Published var errorMessage: String?
     
-    public let direction: Direction
+    // MARK: - Dependencies
+    let direction: Direction
     let transactionsRepository: TransactionsRepository
     let accountsRepository: AccountsRepository
     let categoryRepository: CategoryRepository
@@ -31,39 +33,47 @@ class HistoryViewModel: ObservableObject {
         self.accountsRepository = accountsRepository
         self.categoryRepository = categoryRepository
         
+        // --- РЕАКТИВНЫЕ ПОДПИСКИ ---
+        
+        transactionsRepository.$isLoading
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$isLoading)
+        
+        transactionsRepository.$error
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in self?.errorMessage = error?.localizedDescription }
+            .store(in: &cancellables)
+        
+        // Подписываемся на ОБЩИЙ список транзакций из репозитория
+        transactionsRepository.$transactions
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] allTransactions in
+                self?.process(allTransactions)
+            }
+            .store(in: &cancellables)
+            
         // Подписываемся на изменения дат, чтобы автоматически перезагружать транзакции
-        $startDate.dropFirst().sink { [weak self] _ in self?.loadTransactionsDebounced() }.store(in: &cancellables)
-        $endDate.dropFirst().sink { [weak self] _ in self?.loadTransactionsDebounced() }.store(in: &cancellables)
+        $startDate.dropFirst().debounce(for: .milliseconds(500), scheduler: RunLoop.main).sink { [weak self] _ in self?.loadTransactions() }.store(in: &cancellables)
+        $endDate.dropFirst().debounce(for: .milliseconds(500), scheduler: RunLoop.main).sink { [weak self] _ in self?.loadTransactions() }.store(in: &cancellables)
     }
-
-    func loadTransactions() async {
-        guard let accountId = accountsRepository.currentAccountId else {
-            errorMessage = "Счет пользователя не найден."
-            return
+    
+    // Метод, который запускает загрузку в репозитории
+    func loadTransactions() {
+        Task {
+            guard let accountId = accountsRepository.currentAccountId else { return }
+            let dayStart = Calendar.current.startOfDay(for: startDate)
+            let dayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
+            
+            // Просто триггерим загрузку. Результат придет через подписку.
+            await transactionsRepository.getTransactions(for: accountId, from: dayStart, to: dayEnd)
         }
-        
-        isLoading = true
-        let dayStart = Calendar.current.startOfDay(for: startDate)
-        let dayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
-        
-        let loadedTransactions = await transactionsRepository.getTransactions(for: accountId, from: dayStart, to: dayEnd)
-        
-        self.transactions = loadedTransactions.filter { category(for: $0)?.direction == direction }
+    }
+    
+    // Метод для обработки и фильтрации данных, полученных от репозитория
+    private func process(_ allTransactions: [Transaction]) {
+        self.transactions = allTransactions.filter { category(for: $0)?.direction == direction }
         self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
         applySort()
-        isLoading = false
-    }
-    
-    // Перезагрузка с небольшой задержкой, чтобы не дергать сеть при каждом изменении пикера
-    private func loadTransactionsDebounced() {
-        // Отменяем предыдущий запланированный вызов
-        NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(triggerLoad), object: nil)
-        // Планируем новый через 0.5 секунды
-//        self.perform(#selector(triggerLoad), with: nil, afterDelay: 0.5)
-    }
-    
-    @objc private func triggerLoad() {
-        Task { await loadTransactions() }
     }
     
     func applySort() {
@@ -103,7 +113,7 @@ struct HistoryView: View {
             Color("Background").ignoresSafeArea()
             mainContent
         }
-        .sheet(item: $viewModel.transactionToEdit, onDismiss: { Task { await viewModel.loadTransactions() }}) { transaction in
+        .sheet(item: $viewModel.transactionToEdit, onDismiss: { viewModel.loadTransactions() }) { transaction in
             TransactionEditView(
                 mode: .edit(transaction: transaction),
                 transactionsRepository: viewModel.transactionsRepository,
@@ -120,7 +130,13 @@ struct HistoryView: View {
             }
         }
         .task {
-            await viewModel.loadTransactions()
+            // Загружаем данные при первом появлении экрана
+            viewModel.loadTransactions()
+        }
+        .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "Произошла ошибка")
         }
     }
     
@@ -204,3 +220,4 @@ struct HistoryView: View {
         }
     }
 }
+

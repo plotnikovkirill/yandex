@@ -1,20 +1,24 @@
 import UIKit
 import SwiftUI
-
+import Combine
 final class AnalysisViewController: UIViewController {
 
     // MARK: - Зависимости и данные
     private let direction: Direction
-    private let transactionsRepository: TransactionsRepository
-    private let categoryRepository: CategoryRepository
-    private let accountsRepository: AccountsRepository
-    
-    private var transactions: [Transaction] = []
-    private var totalAmount: Decimal = 0
-    private var sortOption: SortOption = .byDate
-    
-    private lazy var startDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-    private lazy var endDate: Date = Date()
+   private let transactionsRepository: TransactionsRepository
+   private let categoryRepository: CategoryRepository
+   private let accountsRepository: AccountsRepository
+   
+   // Хранилище для подписок Combine
+   private var cancellables = Set<AnyCancellable>()
+   
+   // Локальные копии данных, которые обновляются по подписке
+   private var transactions: [Transaction] = []
+   private var totalAmount: Decimal = 0
+   private var sortOption: SortOption = .byDate
+   
+   private lazy var startDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+   private lazy var endDate: Date = Date()
 
     // MARK: - UI Элементы
     private lazy var tableView: UITableView = {
@@ -39,7 +43,7 @@ final class AnalysisViewController: UIViewController {
         self.categoryRepository = categoryRepository
         self.accountsRepository = accountsRepository
         super.init(nibName: nil, bundle: nil)
-    }
+        }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -48,9 +52,23 @@ final class AnalysisViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupBindings()
         loadData()
     }
-
+    private func setupBindings() {
+           transactionsRepository.$transactions
+               .receive(on: DispatchQueue.main) // Гарантируем выполнение в главном потоке
+               .sink { [weak self] allTransactions in
+                   guard let self = self else { return }
+                   
+                   // Фильтруем и обновляем наши локальные данные
+                   self.transactions = allTransactions.filter { self.categoryRepository.getCategory(id: $0.categoryId)?.direction == self.direction }
+                   self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
+                   self.applySort()
+                   self.tableView.reloadData()
+               }
+               .store(in: &cancellables)
+       }
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         // Настраиваем navigation bar родительского контроллера при каждом появлении
@@ -78,13 +96,13 @@ final class AnalysisViewController: UIViewController {
             
             let dayStart = Calendar.current.startOfDay(for: startDate)
             let dayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
-            
-            let loadedTransactions = await transactionsRepository.getTransactions(for: accountId, from: dayStart, to: dayEnd)
-            
-            self.transactions = loadedTransactions.filter { categoryRepository.getCategory(id: $0.categoryId)?.direction == direction }
-            self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
-            self.applySort()
-            self.tableView.reloadData()
+            await transactionsRepository.getTransactions(for: accountId, from: dayStart, to: dayEnd)
+//            let loadedTransactions = await transactionsRepository.getTransactions(for: accountId, from: dayStart, to: dayEnd)
+//            
+//            self.transactions = loadedTransactions.filter { categoryRepository.getCategory(id: $0.categoryId)?.direction == direction }
+//            self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
+//            self.applySort()
+//            self.tableView.reloadData()
         }
     }
     
