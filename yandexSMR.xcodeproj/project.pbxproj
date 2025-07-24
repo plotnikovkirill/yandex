@@ -45,6 +45,11 @@
 			path = yandexSMRUITests;
 			sourceTree = "<group>";
 		};
+		EDB4E10C2E2AFF3200B3D121 /* Networking */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Networking;
+			sourceTree = "<group>";
+		};
 		EDC025162E18D503006E339F /* Utils */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Utils;
@@ -85,6 +90,7 @@
 		ED4A18D12DFC8CB10006A426 = {
 			isa = PBXGroup;
 			children = (
+				EDB4E10C2E2AFF3200B3D121 /* Networking */,
 				EDC025162E18D503006E339F /* Utils */,
 				EDC71C692E04B21D00AFF975 /* UI */,
 				ED4A18DC2DFC8CB10006A426 /* yandexSMR */,
@@ -121,6 +127,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				ED4A18DC2DFC8CB10006A426 /* yandexSMR */,
+				EDB4E10C2E2AFF3200B3D121 /* Networking */,
 				EDC025162E18D503006E339F /* Utils */,
 				EDC71C692E04B21D00AFF975 /* UI */,
 			);

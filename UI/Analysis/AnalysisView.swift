@@ -1,24 +1,25 @@
-//
-//  AnalysisView.swift
-//  yandexSMR
-//
-//  Created by kirill on 12.07.2025.
-//
-
 import SwiftUI
 
 struct AnalysisView: UIViewControllerRepresentable {
     let direction: Direction
+    
+    // Зависимости, которые мы получим от родительского View (HistoryView)
+    let transactionsRepository: TransactionsRepository
+    let categoryRepository: CategoryRepository
+    let accountsRepository: AccountsRepository
 
-    func makeUIViewController(context: Context) -> UINavigationController {
-        // Оборачиваем наш контроллер в UINavigationController,
-        // чтобы у него был свой заголовок и панель навигации.
-        let analysisVC = AnalysisViewController(direction: direction)
-        let navController = UINavigationController(rootViewController: analysisVC)
-        return navController
+    // Создаем наш UIViewController и передаем ему все зависимости
+    func makeUIViewController(context: Context) -> AnalysisViewController {
+        let analysisVC = AnalysisViewController(
+            direction: direction,
+            transactionsRepository: transactionsRepository,
+            categoryRepository: categoryRepository,
+            accountsRepository: accountsRepository
+        )
+        return analysisVC
     }
 
-    func updateUIViewController(_ uiViewController: UINavigationController, context: Context) {
-        // Пока не требуется обновлять
+    // Этот метод не требуется для нашей задачи
+    func updateUIViewController(_ uiViewController: AnalysisViewController, context: Context) {
     }
 }

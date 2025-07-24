@@ -5,41 +5,40 @@
 //  Created by kirill on 19.06.2025.
 //
 
-
 import Foundation
 
-final class BankAccountsService {
+protocol BankAccountsServiceLogic {
+    func fetchAccount(userId: Int) async throws -> BankAccount
+    func updateAccount(id: Int, requestBody: AccountUpdateRequest) async throws -> BankAccount
+}
+
+final class BankAccountsService: BankAccountsServiceLogic {
     
-    private var account: BankAccount = BankAccount(
-        id: 1,
-        userId: 1,
-        name: "Main accaunt",
-        balance: 10_000.00,
-        currency: "RUB",
-        createdAt: Date(),
-        updatedAt: Date()
-    )
-    
-    func accountForUser(userId: Int) async throws -> BankAccount {
-        return account
+    private let networkClient: NetworkClient
+
+    init(networkClient: NetworkClient = NetworkClient()) {
+        self.networkClient = networkClient
     }
-    
-    func updateAccount(id: Int, name: String, balance: Decimal, currency: String) async throws -> BankAccount {
-        guard id == account.id else {
-            throw NSError(domain: "BankAccountsService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Account not found"])
-        }
-        account = BankAccount(
-            id: id,
-            userId: account.userId,
-            name: name,
-            balance: balance,
-            currency: currency,
-            createdAt: account.createdAt,
-            updatedAt: Date()
+
+    func fetchAccount(userId: Int) async throws -> BankAccount {
+        // API возвращает массив счетов, берем первый.
+        let emptyBody: EmptyBody? = nil
+        let accounts: [BankAccount] = try await networkClient.request(
+            endpoint: "accounts",
+            method: .get,
+            body: emptyBody
         )
-        
-        return account
+        guard let firstAccount = accounts.first else {
+            throw NSError(domain: "BankAccountsService", code: 404, userInfo: nil) // Создать кастомную ошибку
+        }
+        return firstAccount
     }
-
-
+    
+    func updateAccount(id: Int, requestBody: AccountUpdateRequest) async throws -> BankAccount {
+        return try await networkClient.request(
+            endpoint: "/accounts/\(id)",
+            method: .put,
+            body: requestBody
+        )
+    }
 }

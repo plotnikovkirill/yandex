@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct yandexSMRApp: App {
@@ -15,5 +16,7 @@ struct yandexSMRApp: App {
             MainTabView()
                 .environmentObject(dependencies)
         }
+        // ДОБАВЛЯЕМ КОНТЕЙНЕР ДЛЯ ВСЕГО ПРИЛОЖЕНИЯ
+        .modelContainer(for: [Transaction.self, BankAccount.self, Category.self, PendingOperation.self])
     }
 }

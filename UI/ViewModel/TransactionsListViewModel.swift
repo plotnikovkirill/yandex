@@ -1,124 +1,98 @@
-//
-//  TransactionsListViewModel.swift
-//  yandexSMR
-//
-//  Created by kirill on 26.06.2025.
-//
 import SwiftUI
+import Combine
 
+@MainActor
 class TransactionsListViewModel: ObservableObject {
-    @Published var transactions: [Transaction] = []
+    // MARK: - Published Properties for UI
+    @Published var transactions: [Transaction] = [] // Отфильтрованные транзакции для этого View
     @Published var totalAmount: Decimal = 0
-    @Published var isLoading = false
-    @Published var hasMore = true
     @Published var sortOption: SortOption = .byDate
-    @Published var categories: [Category] = []
     
-    private var currentPage = 0
-    private let pageSize = 20
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    
+    // MARK: - Dependencies
     private let direction: Direction
-    
-    var page: Int {
-        currentPage
-    }
-    
-    private let transactionsService = TransactionsService()
-    private let categoriesService = CategoriesService()
-    
-    init(direction: Direction) {
+    // Делаем репозитории публичными, чтобы View могли их передавать дальше
+    let transactionsRepository: TransactionsRepository
+    let accountsRepository: AccountsRepository
+    let categoryRepository: CategoryRepository
+
+    private var cancellables = Set<AnyCancellable>()
+
+    init(direction: Direction,
+         transactionsRepository: TransactionsRepository,
+         accountsRepository: AccountsRepository,
+         categoryRepository: CategoryRepository) {
         self.direction = direction
-    }
-    
-    func loadInitialData() async {
-        await loadCategories()
-        await loadTransactions(page: 0)
-    }
-    
-    private func loadCategories() async {
-        do {
-            let loadedCategories = try await categoriesService.getCategories(by: direction)
-            DispatchQueue.main.async {
-                self.categories = loadedCategories
-            }
-        } catch {
-            print("Error loading categories: \(error)")
-        }
-    }
-    
-    func loadTransactions(page: Int) async {
-        guard !isLoading else { return }
+        self.transactionsRepository = transactionsRepository
+        self.accountsRepository = accountsRepository
+        self.categoryRepository = categoryRepository
         
-        isLoading = true
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: Date())
-        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: startOfDay)!
+        // --- КЛЮЧЕВЫЕ ИЗМЕНЕНИЯ ---
         
-        do {
-            let allTransactions = try await transactionsService.transactions(accountId: 1, from: startOfDay, to: endOfDay)
+        // 1. Подписываемся на isLoading из репозитория
+        transactionsRepository.$isLoading
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$isLoading)
+        
+        // 2. Подписываемся на ошибки из репозитория
+        transactionsRepository.$error
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in self?.errorMessage = error?.localizedDescription }
+            .store(in: &cancellables)
             
-            // Фильтрация по категориям
-            let categoryIds = Set(categories.map { $0.id })
-            let filteredTransactions = allTransactions.filter { categoryIds.contains($0.categoryId) }
-            
-            // Сортировка и пагинация
-            let sortedTransactions = sort(transactions: filteredTransactions)
-            let startIndex = page * pageSize
-            let endIndex = min(startIndex + pageSize, sortedTransactions.count)
-            
-            if startIndex >= sortedTransactions.count {
-                hasMore = false
-                isLoading = false
-                return
-            }
-            
-            let pageItems = Array(sortedTransactions[startIndex..<endIndex])
-            
-            DispatchQueue.main.async {
-                if page == 0 {
-                    self.transactions = pageItems
-                } else {
-                    self.transactions += pageItems
+        // 3. Подписываемся на ОБЩИЙ список транзакций из репозитория
+        transactionsRepository.$transactions
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] allTransactions in
+                guard let self = self else { return }
+                
+                // Фильтруем полученный список по нашему направлению (доход/расход)
+                self.transactions = allTransactions.filter {
+                    self.category(for: $0)?.direction == self.direction
                 }
                 
+                // Пересчитываем сумму и применяем сортировку
                 self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
-                self.currentPage = page + 1
-                self.hasMore = endIndex < sortedTransactions.count
-                self.isLoading = false
+                self.applySort()
             }
-        } catch {
-            print("Error loading transactions: \(error)")
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
+            .store(in: &cancellables)
+    }
+
+    func loadInitialData() async {
+        // Убеждаемся, что базовые данные загружены
+        if accountsRepository.currentAccountId == nil {
+            await accountsRepository.fetchPrimaryAccount()
         }
+        if categoryRepository.allCategories.isEmpty {
+            await categoryRepository.fetchAllCategories()
+        }
+        
+        guard let accountId = accountsRepository.currentAccountId else {
+            errorMessage = "Не удалось загрузить счет пользователя."
+            return
+        }
+        
+        let now = Date()
+        let startOfDay = Calendar.current.startOfDay(for: now)
+        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: now) ?? now
+        
+        // Просто запускаем загрузку в репозитории.
+        // Результат придет через подписку (sink) выше.
+        await transactionsRepository.getTransactions(for: accountId, from: startOfDay, to: endOfDay)
     }
     
-    func loadNextPage() async {
-        await loadTransactions(page: currentPage)
-    }
-    func loadMoreIfNeeded(for transaction: Transaction) {
-            // Проверяем, является ли появившаяся на экране транзакция последней в нашем списке
-            if transactions.last?.id == transaction.id && hasMore {
-                Task {
-                    // Если да, и есть еще страницы, грузим следующую
-                    await loadNextPage()
-                }
-            }
-        }
     func applySort() {
-        transactions = sort(transactions: transactions)
-    }
-    
-    private func sort(transactions: [Transaction]) -> [Transaction] {
         switch sortOption {
         case .byDate:
-            return transactions.sorted { $0.transactionDate > $1.transactionDate }
+            transactions.sort { $0.transactionDate > $1.transactionDate }
         case .byAmount:
-            return transactions.sorted { $0.amount > $1.amount }
+            transactions.sort { $0.amount > $1.amount }
         }
     }
     
     func category(for transaction: Transaction) -> Category? {
-        categories.first { $0.id == transaction.categoryId }
+        return categoryRepository.getCategory(id: transaction.categoryId)
     }
 }

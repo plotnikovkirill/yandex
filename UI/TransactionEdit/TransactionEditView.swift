@@ -12,9 +12,18 @@ struct TransactionEditView: View {
     @StateObject private var viewModel: TransactionEditViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(mode: TransactionScreenMode) {
-        _viewModel = StateObject(wrappedValue: TransactionEditViewModel(mode: mode))
-    }
+    init(mode: TransactionScreenMode,
+             transactionsRepository: TransactionsRepository,
+             categoryRepository: CategoryRepository,
+             accountsRepository: AccountsRepository) {
+            
+            _viewModel = StateObject(wrappedValue: TransactionEditViewModel(
+                mode: mode,
+                transactionsRepository: transactionsRepository,
+                categoryRepository: categoryRepository,
+                accountsRepository: accountsRepository
+            ))
+        }
 
     var body: some View {
         NavigationView {

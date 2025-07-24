@@ -1,22 +1,24 @@
-// UI/Analysis/AnalysisViewController.swift
-
 import UIKit
 import SwiftUI
-
+import Combine
 final class AnalysisViewController: UIViewController {
 
     // MARK: - Зависимости и данные
     private let direction: Direction
-    private let transactionsService = TransactionsService()
-    private let categoriesService = CategoriesService()
-    
-    private var transactions: [Transaction] = []
-    private var allCategories: [Category] = []
-    private var totalAmount: Decimal = 0
-    private var sortOption: SortOption = .byDate
-    
-    private lazy var startDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-    private lazy var endDate: Date = Date()
+   private let transactionsRepository: TransactionsRepository
+   private let categoryRepository: CategoryRepository
+   private let accountsRepository: AccountsRepository
+   
+   // Хранилище для подписок Combine
+   private var cancellables = Set<AnyCancellable>()
+   
+   // Локальные копии данных, которые обновляются по подписке
+   private var transactions: [Transaction] = []
+   private var totalAmount: Decimal = 0
+   private var sortOption: SortOption = .byDate
+   
+   private lazy var startDate: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+   private lazy var endDate: Date = Date()
 
     // MARK: - UI Элементы
     private lazy var tableView: UITableView = {
@@ -32,10 +34,16 @@ final class AnalysisViewController: UIViewController {
     }()
 
     // MARK: - Lifecycle
-    init(direction: Direction) {
+    init(direction: Direction,
+         transactionsRepository: TransactionsRepository,
+         categoryRepository: CategoryRepository,
+         accountsRepository: AccountsRepository) {
         self.direction = direction
+        self.transactionsRepository = transactionsRepository
+        self.categoryRepository = categoryRepository
+        self.accountsRepository = accountsRepository
         super.init(nibName: nil, bundle: nil)
-    }
+        }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -44,17 +52,35 @@ final class AnalysisViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupBindings()
         loadData()
+    }
+    private func setupBindings() {
+           transactionsRepository.$transactions
+               .receive(on: DispatchQueue.main) // Гарантируем выполнение в главном потоке
+               .sink { [weak self] allTransactions in
+                   guard let self = self else { return }
+                   
+                   // Фильтруем и обновляем наши локальные данные
+                   self.transactions = allTransactions.filter { self.categoryRepository.getCategory(id: $0.categoryId)?.direction == self.direction }
+                   self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
+                   self.applySort()
+                   self.tableView.reloadData()
+               }
+               .store(in: &cancellables)
+       }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Настраиваем navigation bar родительского контроллера при каждом появлении
+        guard let navController = self.navigationController else { return }
+        navController.navigationBar.prefersLargeTitles = true
+        self.navigationItem.title = "Анализ"
     }
 
     // MARK: - Настройка UI
     private func setupUI() {
         view.backgroundColor = UIColor(named: "Background")
-        title = "Анализ"
-        navigationController?.navigationBar.prefersLargeTitles = true
-        
         view.addSubview(tableView)
-        
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -62,128 +88,62 @@ final class AnalysisViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
-    // ... внутри final class AnalysisViewController ...
-
-    private func createStyledDatePicker(date: Date, action: Selector) -> UIView {
-        // 1. Создаем сам пикер
-        let picker = UIDatePicker()
-        picker.date = date
-        picker.datePickerMode = .date
-        // ВАЖНО: Устанавливаем стиль, чтобы он выглядел как кнопка
-        picker.preferredDatePickerStyle = .compact
-        picker.addTarget(self, action: action, for: .valueChanged)
-        
-        // 2. Создаем контейнер
-        let container = UIView()
-        container.backgroundColor = UIColor(named: "LightAccentColor")?.withAlphaComponent(0.5)
-        container.layer.cornerRadius = 8
-        container.clipsToBounds = true
-        
-        // 4. Помещаем пикер внутрь контейнера
-        container.addSubview(picker)
-        picker.translatesAutoresizingMaskIntoConstraints = false
-        
-        // ДОБАВЛЕНО: Задаем явный размер контейнеру
-        // Это говорит системе, что наш контейнер должен иметь определенный размер,
-        // основанный на внутреннем размере пикера.
-        container.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            container.widthAnchor.constraint(equalTo: picker.widthAnchor, constant: 16), // Добавляем отступы по бокам
-            container.heightAnchor.constraint(equalTo: picker.heightAnchor, constant: 8)  // Добавляем отступы сверху/снизу
-        ])
-        
-        // Привязываем пикер к центру контейнера
-        NSLayoutConstraint.activate([
-            picker.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            picker.centerYAnchor.constraint(equalTo: container.centerYAnchor)
-        ])
-        
-        return container
-    }
 
     // MARK: - Логика
     private func loadData() {
         Task {
+            guard let accountId = accountsRepository.currentAccountId else { return }
+            
             let dayStart = Calendar.current.startOfDay(for: startDate)
             let dayEnd = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
-            
-            do {
-                let categoriesForDirection = try await categoriesService.getCategories(by: direction)
-                let categoryIds = Set(categoriesForDirection.map(\.id))
-                let allTransactions = try await transactionsService.transactions(accountId: 1, from: dayStart, to: dayEnd)
-                
-                let filtered = allTransactions.filter { categoryIds.contains($0.categoryId) }
-                
-                await MainActor.run {
-                    self.allCategories = categoriesForDirection
-                    self.transactions = filtered
-                    self.applySort()
-                    self.totalAmount = filtered.reduce(0) { $0 + $1.amount }
-                    self.tableView.reloadData()
-                }
-            } catch {
-                print("Ошибка загрузки данных для анализа: \(error)")
-            }
+            await transactionsRepository.getTransactions(for: accountId, from: dayStart, to: dayEnd)
+//            let loadedTransactions = await transactionsRepository.getTransactions(for: accountId, from: dayStart, to: dayEnd)
+//            
+//            self.transactions = loadedTransactions.filter { categoryRepository.getCategory(id: $0.categoryId)?.direction == direction }
+//            self.totalAmount = self.transactions.reduce(0) { $0 + $1.amount }
+//            self.applySort()
+//            self.tableView.reloadData()
         }
     }
     
     private func applySort() {
         switch sortOption {
-        case .byDate:
-            transactions.sort { $0.transactionDate > $1.transactionDate }
-        case .byAmount:
-            transactions.sort { $0.amount > $1.amount }
+        case .byDate: transactions.sort { $0.transactionDate > $1.transactionDate }
+        case .byAmount: transactions.sort { $0.amount > $1.amount }
         }
     }
     
     @objc private func startDateChanged(_ picker: UIDatePicker) {
         self.startDate = picker.date
-        if startDate > endDate {
-            endDate = startDate
-        }
+        if startDate > endDate { endDate = startDate }
         loadData()
     }
     
     @objc private func endDateChanged(_ picker: UIDatePicker) {
         self.endDate = picker.date
-        if endDate < startDate {
-            startDate = endDate
-        }
+        if endDate < startDate { startDate = endDate }
         loadData()
     }
     
     @objc private func sortTapped(_ sender: UIButton) {
         let alert = UIAlertController(title: "Сортировка", message: nil, preferredStyle: .actionSheet)
-        
-        alert.addAction(UIAlertAction(title: "По дате", style: .default, handler: { _ in
-            self.sortOption = .byDate
-            self.applySort()
-            self.tableView.reloadData()
-        }))
-        
-        alert.addAction(UIAlertAction(title: "По сумме", style: .default, handler: { _ in
-            self.sortOption = .byAmount
-            self.applySort()
-            self.tableView.reloadData()
-        }))
-        
+        alert.addAction(UIAlertAction(title: "По дате", style: .default) { _ in self.updateSortOption(to: .byDate) })
+        alert.addAction(UIAlertAction(title: "По сумме", style: .default) { _ in self.updateSortOption(to: .byAmount) })
         alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
-        
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = sender
-        }
-        
         present(alert, animated: true)
     }
-} // <-- ВАЖНО: ЭТА СКОБКА ЗАКРЫВАЕТ КЛАСС AnalysisViewController
-
+    
+    private func updateSortOption(to option: SortOption) {
+        self.sortOption = option
+        self.applySort()
+        self.tableView.reloadSections(IndexSet(integer: 2), with: .automatic) // Обновляем только секцию с операциями
+    }
+}
 
 // MARK: - UITableViewDataSource, UITableViewDelegate
 extension AnalysisViewController: UITableViewDataSource, UITableViewDelegate {
     
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return 3
-    }
+    func numberOfSections(in tableView: UITableView) -> Int { 3 }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
@@ -196,60 +156,47 @@ extension AnalysisViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         switch indexPath.section {
-        case 0:
-            // Секция управления
-                    let cell = UITableViewCell(style: .value1, reuseIdentifier: "value1Cell")
-                    cell.backgroundColor = .systemBackground
-                    cell.selectionStyle = .none
+        case 0: // Секция управления
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: "value1Cell")
+            cell.backgroundColor = .systemBackground
+            cell.selectionStyle = .none
+            
+            switch indexPath.row {
+            case 0:
+                cell.textLabel?.text = "Период: начало"
+                let picker = UIDatePicker()
+                picker.date = startDate
+                picker.datePickerMode = .date
+                picker.preferredDatePickerStyle = .compact
+                picker.addTarget(self, action: #selector(startDateChanged), for: .valueChanged)
+                cell.accessoryView = picker
+            case 1:
+                cell.textLabel?.text = "Период: конец"
+                let picker = UIDatePicker()
+                picker.date = endDate
+                picker.datePickerMode = .date
+                picker.preferredDatePickerStyle = .compact
+                picker.addTarget(self, action: #selector(endDateChanged), for: .valueChanged)
+                cell.accessoryView = picker
+            case 2:
+                cell.textLabel?.text = "Сумма"
+                cell.detailTextLabel?.text = "\(totalAmount.formatted()) ₽"
+            default: break
+            }
+            if let picker = cell.accessoryView as? UIDatePicker {
+                picker.layer.cornerRadius = 8
+                picker.layer.masksToBounds = true
+            }
+            return cell
 
-                    switch indexPath.row {
-                    case 0:
-                        cell.textLabel?.text = "Период: начало"
-                        let picker = UIDatePicker()
-                        picker.date = startDate
-                        picker.datePickerMode = .date
-                        picker.preferredDatePickerStyle = .compact
-                        picker.addTarget(self, action: #selector(startDateChanged), for: .valueChanged)
-                        // Присваиваем стилизованный пикер как accessoryView
-                        cell.accessoryView = picker
-                        
-                    case 1:
-                        cell.textLabel?.text = "Период: конец"
-                        let picker = UIDatePicker()
-                        picker.date = endDate
-                        picker.datePickerMode = .date
-                        picker.preferredDatePickerStyle = .compact
-                        picker.addTarget(self, action: #selector(endDateChanged), for: .valueChanged)
-                        cell.accessoryView = picker
-
-                    case 2:
-                        cell.textLabel?.text = "Сумма"
-                        cell.detailTextLabel?.text = "\(totalAmount.formatted()) ₽"
-                        
-                    default: break
-                    }
-                    
-                    // Стилизуем accessoryView, если это UIDatePicker
-                    if let picker = cell.accessoryView as? UIDatePicker {
-                        //picker.backgroundColor = UIColor(named: "LightAccentColor")?.withAlphaComponent(0.5)
-                        picker.layer.cornerRadius = 8
-                        picker.layer.masksToBounds = true
-                        // Добавляем отступы, чтобы фон был чуть больше самого пикера
-                        picker.layoutMargins = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 8)
-                    }
-                    
-                    return cell
-
-        case 1:
+        case 1: // Секция "графика"
             let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
             let imageView = UIImageView(image: UIImage(systemName: "chart.pie.fill"))
             imageView.tintColor = .systemGray4
             imageView.contentMode = .scaleAspectFit
             imageView.translatesAutoresizingMaskIntoConstraints = false
-            
             cell.contentView.subviews.forEach { $0.removeFromSuperview() }
             cell.contentView.addSubview(imageView)
-            
             NSLayoutConstraint.activate([
                 imageView.centerXAnchor.constraint(equalTo: cell.contentView.centerXAnchor),
                 imageView.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
@@ -259,13 +206,12 @@ extension AnalysisViewController: UITableViewDataSource, UITableViewDelegate {
             cell.selectionStyle = .none
             return cell
 
-        case 2:
-            guard let transactionCell = tableView.dequeueReusableCell(withIdentifier: HostingCell.reuseIdentifier, for: indexPath) as? HostingCell else {
-                 return UITableViewCell()
-            }
+        case 2: // Секция операций
+            guard let transactionCell = tableView.dequeueReusableCell(withIdentifier: HostingCell.reuseIdentifier, for: indexPath) as? HostingCell else { return UITableViewCell() }
             let transaction = transactions[indexPath.row]
-            let category = allCategories.first { $0.id == transaction.categoryId }
-            transactionCell.configure(with: transaction, category: category)
+            let category = categoryRepository.getCategory(id: transaction.categoryId)
+            transactionCell.configure(with: transaction, category: category, hideChevron: true)
+            transactionCell.accessoryType = .disclosureIndicator // Используем стандартную стрелку
             return transactionCell
 
         default:
@@ -275,40 +221,28 @@ extension AnalysisViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
         if indexPath.section == 2 {
             let transaction = transactions[indexPath.row]
-            let editView = TransactionEditView(mode: .edit(transaction: transaction))
+            let editView = TransactionEditView(
+                mode: .edit(transaction: transaction),
+                transactionsRepository: self.transactionsRepository,
+                categoryRepository: self.categoryRepository,
+                accountsRepository: self.accountsRepository
+            )
             let hostingController = UIHostingController(rootView: editView)
-            present(hostingController, animated: true, completion: nil)
+            present(hostingController, animated: true)
         }
     }
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         if section == 2 {
             let headerView = UIView()
-            let titleLabel = UILabel()
-            titleLabel.text = "ОПЕРАЦИИ"
-            titleLabel.font = .systemFont(ofSize: 13, weight: .regular)
-            titleLabel.textColor = .gray
-            
-            let sortButton = UIButton(type: .system)
-            sortButton.setTitle(sortOption.rawValue, for: .normal)
-            sortButton.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
-            sortButton.semanticContentAttribute = .forceRightToLeft
-            sortButton.addTarget(self, action: #selector(sortTapped), for: .touchUpInside)
-            
-            titleLabel.translatesAutoresizingMaskIntoConstraints = false
-            sortButton.translatesAutoresizingMaskIntoConstraints = false
-            headerView.addSubview(titleLabel)
-            headerView.addSubview(sortButton)
-            
+            let titleLabel = UILabel(); titleLabel.text = "ОПЕРАЦИИ"; titleLabel.font = .systemFont(ofSize: 13, weight: .regular); titleLabel.textColor = .gray
+            let sortButton = UIButton(type: .system); sortButton.setTitle(sortOption.rawValue, for: .normal); sortButton.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal); sortButton.semanticContentAttribute = .forceRightToLeft; sortButton.addTarget(self, action: #selector(sortTapped), for: .touchUpInside)
+            [titleLabel, sortButton].forEach { $0.translatesAutoresizingMaskIntoConstraints = false; headerView.addSubview($0) }
             NSLayoutConstraint.activate([
-                titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
-                titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-                
-                sortButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
-                sortButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor)
+                titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16), titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+                sortButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16), sortButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor)
             ])
             return headerView
         }
@@ -319,22 +253,19 @@ extension AnalysisViewController: UITableViewDataSource, UITableViewDelegate {
         if section == 2 { return 40 }
         return UITableView.automaticDimension
     }
+    
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-            // Задаем высоту только для ячеек с транзакциями
-            if indexPath.section == 2 {
-                return 60.0 // Можете подобрать значение, 60 выглядит хорошо
-            }
-            // Для остальных ячеек оставляем автоматическую высоту
-            return UITableView.automaticDimension
-        }
+        if indexPath.section == 2 { return 60.0 }
+        return UITableView.automaticDimension
+    }
 }
 
-
+// MARK: - Hosting Cell for SwiftUI Row
 fileprivate final class HostingCell: UITableViewCell {
     static let reuseIdentifier = "TransactionHostingCell"
     private var hostingController: UIHostingController<TransactionRow>?
 
-    func configure(with transaction: Transaction, category: Category?) {
+    func configure(with transaction: Transaction, category: Category?, hideChevron: Bool) {
         let transactionRowView = TransactionRow(transaction: transaction, category: category, showEmojiBackground: true)
         
         if let hostingController = hostingController {
@@ -344,12 +275,9 @@ fileprivate final class HostingCell: UITableViewCell {
             guard let hcView = hostingController?.view else { return }
             hcView.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(hcView)
-            
             NSLayoutConstraint.activate([
-                hcView.topAnchor.constraint(equalTo: contentView.topAnchor),
-                hcView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-                hcView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-                hcView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
+                hcView.topAnchor.constraint(equalTo: contentView.topAnchor), hcView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                hcView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor), hcView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
             ])
         }
         contentView.backgroundColor = .systemBackground

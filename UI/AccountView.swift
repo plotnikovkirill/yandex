@@ -1,135 +1,117 @@
-//
-//  AccountView.swift
-//  yandexSMR
-//
-//  Created by kirill on 25.06.2025.
-//
-
 import SwiftUI
 
 struct AccountView: View {
-    @StateObject private var viewModel = AccountViewModel()
+    @StateObject private var viewModel: AccountViewModel
     @State private var isEditing = false
     @State private var showCurrencyPicker = false
     
+    init(viewModel: AccountViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
+    
     var body: some View {
         NavigationView {
+            // ZStack теперь является корневым элементом внутри NavigationView
             ZStack {
                 Color("Background").ignoresSafeArea()
                 
-                List {
-                    Section(header: Text("Баланс")) {
+                if viewModel.isLoading && viewModel.balance == 0 {
+                    ProgressView()
+                } else {
+                    contentList
+                }
+            }
+            .navigationTitle("Мой счёт")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(isEditing ? "Сохранить" : "Редактировать") {
                         if isEditing {
-                            HStack {
-                                Text("💰 Баланс")
-                                    .font(.headline)
-                                    .foregroundColor(Color("TextColor"))
-                                Spacer()
-                                TextField("Введите сумму", text: $viewModel.balanceInput) //TODO: сделать отображение текущего баланса
-                                    .keyboardType(.decimalPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .scrollDismissesKeyboard(.immediately)
-                                    .onChange(of: viewModel.balanceInput) { newValue in
-                                        viewModel.filterBalanceInput(newValue)
-                                    }
-                                    .onSubmit {
-                                        viewModel.applyBalanceInput()
-                                    }
-                                    .contextMenu {
-                                        Button("Вставить") {
-                                            viewModel.pasteFromClipboard()
-                                        }
-                                    }
+                            viewModel.applyBalanceInput()
+                            viewModel.saveChanges()
+                        }
+                        isEditing.toggle()
+                    }
+                }
+            }
+            // --- ВСЕ МОДИФИКАТОРЫ ПЕРЕНЕСЕНЫ СЮДА ---
+            // Они применяются к ZStack, который является главным View
+            .onShake {
+                viewModel.balanceHidden.toggle()
+            }
+            .refreshable {
+                await viewModel.refreshData()
+            }
+            .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button("OK") { viewModel.errorMessage = nil }
+            } message: {
+                Text(viewModel.errorMessage ?? "Произошла неизвестная ошибка.")
+            }
+        }
+    }
+    
+    private var contentList: some View {
+        List {
+            Section(header: Text("Баланс")) {
+                if isEditing {
+                    HStack {
+                        Text("💰 Баланс")
+                            .font(.headline)
+                        Spacer()
+                        TextField("Введите сумму", text: $viewModel.balanceInput)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .onAppear {
+                                viewModel.balanceInput = "\(viewModel.balance)"
                             }
-                            
+                    }
+                } else {
+                    HStack {
+                        Text("💰 Баланс")
+                            .font(.headline)
+                        Spacer()
+                        
+                        if viewModel.balanceHidden {
+                            Text("******")
+                                .redacted(reason: .placeholder)
                         } else {
-                            HStack {
-                                Text("💰 Баланс")
-                                    .font(.headline)
-                                    .foregroundColor(Color("TextColor"))
-                                Spacer()
-                                
-                                if viewModel.balanceHidden {
-                                    Text("******")
-                                        .redacted(reason: .placeholder)
-                                } else {
-                                    Text(viewModel.balance, format: .currency(code: viewModel.currency))
-                                }
-                            }
-                        }
-                    }
-                    .listRowBackground(isEditing ? Color.white : Color("AccentColor"))
-                    
-                    // Секция валюты
-                    Section(header: Text("Валюта")) {
-                        HStack {
-                            Text("Валюта")
-                                .font(.headline)
-                            
-                            Spacer()
-                            
-                            Text(viewModel.currency)
-                            
-                            if isEditing {
-                                Button(action: {
-                                    showCurrencyPicker = true
-                                }) {
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(.gray)
-                                }
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if isEditing {
-                                showCurrencyPicker = true
-                            }
-                        }
-                    }
-                    .listRowBackground(isEditing ? Color.white : Color("AccentColor").opacity(0.5))
-                }
-                .listStyle(.insetGrouped)
-                .scrollContentBackground(.hidden) // Важно!
-                .navigationTitle("Мой счёт")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(isEditing ? "Сохранить" : "Редактировать") {
-                            if isEditing {
-                                viewModel.applyBalanceInput()
-                                viewModel.saveChanges()
-                            }
-                            isEditing.toggle()
+                            Text(viewModel.balance, format: .currency(code: viewModel.currency))
                         }
                     }
                 }
-                .confirmationDialog(
-                    "Выберите валюту",
-                    isPresented: $showCurrencyPicker,
-                    titleVisibility: .visible
-                ) {
-                    ForEach(viewModel.currencies, id: \.self) { currency in
-                        Button(currency) {
-                            if currency != viewModel.currency {
-                                viewModel.currency = currency
-                            }
-                        }
+            }
+            .listRowBackground(isEditing ? Color.white : Color("AccentColor"))
+            
+            Section(header: Text("Валюта")) {
+                HStack {
+                    Text("Валюта")
+                        .font(.headline)
+                    Spacer()
+                    Text(viewModel.currency)
+                    if isEditing {
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
                     }
-                    Button("Отмена", role: .cancel) {}
                 }
-                .onShake {
-                    viewModel.balanceHidden.toggle()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if isEditing {
+                        showCurrencyPicker = true
+                    }
                 }
-                .refreshable {
-                    await viewModel.refreshData()
+            }
+            .listRowBackground(isEditing ? Color.white : Color("AccentColor").opacity(0.5))
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .confirmationDialog("Выберите валюту", isPresented: $showCurrencyPicker, titleVisibility: .visible) {
+            ForEach(viewModel.currencies, id: \.self) { currency in
+                Button(currency) {
+                    viewModel.currency = currency
                 }
             }
         }
     }
 }
-
-
-
-
 extension UIDevice {
     static let deviceDidShakeNotification = Notification.Name(rawValue: "deviceDidShakeNotification")
 }
